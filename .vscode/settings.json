@@ -17,7 +17,6 @@
         "Error",
         "setResourceState",
         "readResource",
-        "Warning",
         "AddDiscoveredResource",
         "readAllResources",
         "encBase64",
@@ -36,6 +35,10 @@
         "process",
         "urlPost",
         "driver_help",
-        "CONST"
+        "CONST",
+        "Warn",
+        "urlGet",
+        "urlPut",
+        "numericArgument"
     ]
 }
