@@ -279,14 +279,14 @@ local function notification_runtime(command, resource, arguments)
             icon = arguments._ICON,
             text = arguments._MESSAGE,
           }
-        }
-      },
-      sound = {
-        category = string.lower(arguments["_SOUND CATEGORY"]),
-        id = arguments["_SOUND ID"],
-        ["repeat"] = arguments["_SOUND REPEAT"]
-      },
-      cycles = arguments._CYCLES
+        },
+        sound = {
+          category = string.lower(arguments["_SOUND CATEGORY"]),
+          id = arguments["_SOUND ID"],
+          ["repeat"] = arguments["_SOUND REPEAT"]
+        },
+        cycles = arguments._CYCLES
+      }
     }
 
     post_to_url("device/notifications", payload)
