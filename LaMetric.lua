@@ -16,18 +16,19 @@ driver_channels = {
 }
 
 local function intArgument(name, default_value, min_val, max_val, optionalArgs)
-  local label_value
+  local context_help
   if optionalArgs and optionalArgs.context_help then
-    label_value = optionalArgs.context_help
+    context_help = optionalArgs.context_help
   else
-    label_value = name
+    context_help = "Integer value"
   end
 
   return {
     name = name,
-    label = label_value,
+    label = name,
     type = "int",
     default = default_value,
+    context_help = context_help,
     validation = {
       min = min_val,
       max = max_val
@@ -40,25 +41,17 @@ resource_types = {
     standardResourceType = "_NOTIFICATION",
     address = stringArgument("address", "ID", { context_help = "Device id." }),
     commands = {
-      -- priority:(info, warning, critical)
-      -- icon_type:(none, info, alert)
-      -- lifetime, sound (categoty, id, repeat), frames
-      -- model
-      ---- cycles
-      ---- frames[]
-      ------ (message) icon, text
-      ------ (goal) icon, start, end, current, unit
-      ------ (spike chart I don't think so!!!)
-      ---- sound
-      ------ category:(alarms, notifications)
-      ------ id
-      ------ repeat
-
-      --{"priority": "critical","icon_type":"alert","lifetime":5000,"model": { "frames": [ { "icon":1237,"text":"Armed!"}], "sound": {"category": "alarms", "id": "alarm9","repeat":2}}}
-
       ["_SEND"] = {
         arguments = {
-          stringArgument("_MESSAGE", "", { context_help = "Message to display." })
+          enumArgument("_PRIORITY", { "INFO", "WARNING", "CRITICAL" }, "INFO", { context_help = "" }),
+          enumArgument("_ICON TYPE", { "NONE", "INFO", "ALERT" }, "NONE", { context_help = "" }),
+          stringArgument("_ICON", "2867", { context_help = "Icon id or base64 encoded binary"}),
+          stringArgument("_MESSAGE", "", { context_help = "Message to display." }),
+          intArgument("_LIFETIME", 120000, 1000, 1000000, { context_help = "Lifetime of the notification in milliseconds. Default is 2 minutes." }),
+          intArgument("_CYCLES", 1, 1, 100, { context_help = "The number of times message should be displayed. If cycles is set to 0, notification will stay on the screen until user dismisses it manually."}),
+          enumArgument("_SOUND CATEGORY", { "ALARMS", "NOTIFICATIONS" }, "NOTIFICATIONS"),
+          stringArgument("_SOUND ID", "notification"),
+          intArgument("_SOUND REPEAT", 1, 0, 100, { context_help = "Defines the number of times sound must be played. If set to 0 sound will be played until notification is dismissed."})
         },
         context_help = "Displays an alert."
       }
@@ -127,7 +120,7 @@ resource_types = {
         arguments = {
           intArgument("_INDEX", 1, 1, 10)
         },
-        context_help = "Start the radio."
+        context_help = "Start a specific raidio station."
       },
       ["_STOP"] = {
         arguments = {
@@ -137,12 +130,12 @@ resource_types = {
       ["_NEXT"] = {
         arguments = {
         },
-        context_help = "Next radio channel."
+        context_help = "Next radio station."
       },
       ["_PREV"] = {
         arguments = {
         },
-        context_help = "Previous radio channel."
+        context_help = "Previous radio station."
       }
     },
     states = {
@@ -226,9 +219,9 @@ local function create_url(url)
   return "https://"..channel.attributes("_laMetricTimeHost")..":4343/api/v2/"..url
 end
 
-local function post_to_url(endpoint, data)
+local function rest_request(method, endpoint, data)
   local url = create_url(endpoint)
-  local payload = data
+  local payload = data or ""
 
   if type(data) == "table" then
     payload = tableToJson(data)
@@ -236,79 +229,67 @@ local function post_to_url(endpoint, data)
 
   Trace("Sending "..payload.." to "..url)
 
-  local success, result = urlPost(url, payload, create_headers())
+  local success, result = method(url, payload, create_headers())
 
-  Trace("Received: "..result)
-
-  if (not success) then
+  if success ~= true then
     driver.setError()
-    Trace("Error response: "..result)
+    Error("Error response: "..result)
     return false, nil
   else
     driver.setOnline()
+    Trace("Received: "..result)
     return true, jsonToTable(result)
   end
+end
+
+local function post_to_url(endpoint, data)
+  return rest_request(urlPost, endpoint, data)
 end
 
 local function put_to_url(endpoint, data)
-  local url = create_url(endpoint)
-  local payload = data
-
-  if type(data) == "table" then
-    payload = tableToJson(data)
-  end
-
-  Trace("Sending "..payload.." to "..url)
-
-  local success, result = urlPut(url, payload, create_headers())
-
-  Trace("Received: "..result)
-
-  if (not success) then
-    driver.setError()
-    Trace("Error response: "..result)
-    return false, nil
-  else
-    driver.setOnline()
-    return true, jsonToTable(result)
-  end
+  return rest_request(urlPut, endpoint, data)
 end
 
 local function get_from_url(endpoint)
-  local url = create_url(endpoint)
-  Trace("Getting from "..url)
+  return rest_request(urlGet, endpoint, "")
+end
 
-  local success, result = urlGet(url, "", create_headers())
+local function activate(resource)
+  return put_to_url("device/apps/"..resource.address.."/activate")
+end
 
-  Trace("Received: "..result)
-
-  if (not success) then
-    driver.setError()
-    Trace("Error response: "..result)
-    return false, nil
-  else
-    driver.setOnline()
-    return true, jsonToTable(result)
+local function action(resource, id, params)
+  local payload = { id = id, activate = true }
+  if next(params) then
+    payload.params = params
   end
+
+  return post_to_url("device/apps/"..resource.address.."/actions", payload)
 end
 
 local function notification_runtime(command, resource, arguments)
   if command == "_SEND" then
-    local message = arguments._MESSAGE
-    if message then
-      local data_table = {
-        model = {
-          frames = {
-            {
-              icon = 2867,
-              text = message
-            }
+    local payload = {
+      priority = string.lower(arguments._PRIORITY),
+      icon_type = string.lower(arguments["_ICON TYPE"]),
+      lifetime = arguments._LIFETIME,
+      model = {
+        frames = {
+          {
+            icon = arguments._ICON,
+            text = arguments._MESSAGE,
           }
         }
-      }
+      },
+      sound = {
+        category = string.lower(arguments["_SOUND CATEGORY"]),
+        id = arguments["_SOUND ID"],
+        ["repeat"] = arguments["_SOUND REPEAT"]
+      },
+      cycles = arguments._CYCLES
+    }
 
-      post_to_url("device/notifications", data_table)
-    end
+    post_to_url("device/notifications", payload)
   else
     Warn("Unknown command '"..command.."'")
   end
@@ -316,7 +297,7 @@ end
 
 local function widget_runtime(command, resource, arguments)
   if command == "_ACTIVATE" then
-    put_to_url("device/apps/"..resource.address.."/activate", "")
+    activate(resource)
   else
     Warn("Unknown command '"..command.."'")
   end
@@ -324,13 +305,13 @@ end
 
 local function stopwatch_runtime(command, resource, arguments)
   if command == "_ACTIVATE" then
-    put_to_url("device/apps/"..resource.address.."/activate", "")
+    activate(resource)
   elseif command == "_START" then
-    post_to_url("device/apps/"..resource.address.."/actions", { id = "stopwatch.start", activate = true })
+    action(resource, "stopwatch.start")
   elseif command == "_PAUSE" then
-    post_to_url("device/apps/"..resource.address.."/actions", { id = "stopwatch.pause", activate = true })
+    action(resource, "stopwatch.pause")
   elseif command == "_RESET" then
-    post_to_url("device/apps/"..resource.address.."/actions", { id = "stopwatch.reset", activate = true })
+    action(resource, "stopwatch.reset")
   else
     Warn("Unknown command '"..command.."'")
   end
@@ -338,7 +319,7 @@ end
 
 local function clock_runtime(command, resource, arguments)
   if command == "_ACTIVATE" then
-    put_to_url("device/apps/"..resource.address.."/activate", "")
+    activate(resource)
   else
     Warn("Unknown command '"..command.."'")
   end
@@ -346,13 +327,13 @@ end
 
 local function countdown_runtime(command, resource, arguments)
   if command == "_ACTIVATE" then
-    put_to_url("device/apps/"..resource.address.."/activate", "")
+    activate(resource)
   elseif command == "_START" then
-    post_to_url("device/apps/"..resource.address.."/actions", { id = "countdown.start", activate = true })
+    action(resource, "countdown.start")
   elseif command == "_PAUSE" then
-    post_to_url("device/apps/"..resource.address.."/actions", { id = "countdown.pause", activate = true })
+    action(resource, "countdown.pause")
   elseif command == "_RESET" then
-    post_to_url("device/apps/"..resource.address.."/actions", { id = "countdown.reset", activate = true })
+    action(resource, "countdown.reset")
   else
     Warn("Unknown command '"..command.."'")
   end
@@ -360,9 +341,9 @@ end
 
 local function weather_runtime(command, resource, arguments)
   if command == "_ACTIVATE" then
-    put_to_url("device/apps/"..resource.address.."/activate", "")
+    activate(resource)
   elseif command == "_FORECAST" then
-    post_to_url("device/apps/"..resource.address.."/actions", { id = "weather.forecast", activate = true })
+    action(resource, "weather.forecast")
   else
     Warn("Unknown command '"..command.."'")
   end
@@ -370,23 +351,32 @@ end
 
 local function radio_runtime(command, resource, arguments)
   if command == "_ACTIVATE" then
-    put_to_url("device/apps/"..resource.address.."/activate", "")
+    activate(resource)
   elseif command == "_PLAY" then
-    post_to_url("device/apps/"..resource.address.."/actions", { id = "radio.play", activate = true })
+    action(resource, "radio.play")
   elseif command == "_PLAY CHANNEL" then
-    post_to_url("device/apps/"..resource.address.."/actions", { id = "radio.play", activate = true, params = { idx = arguments._INDEX } })
+    action(resource, "radio.play.at", { idx = arguments._INDEX })
   elseif command == "_STOP" then
-    post_to_url("device/apps/"..resource.address.."/actions", { id = "radio.stop", activate = true })
+    action(resource, "radio.stop")
   elseif command == "_NEXT" then
-    post_to_url("device/apps/"..resource.address.."/actions", { id = "radio.next", activate = true })
+    action(resource, "radio.next")
   elseif command == "_PREV" then
-    post_to_url("device/apps/"..resource.address.."/actions", { id = "radio.prev", activate = true })
+    action(resource, "radio.prev")
   else
     Warn("Unknown command '"..command.."'")
   end
 end
 
-
+local function create_resource(id, widget, type, description)
+  return {
+    ["address"]     = widget.package.."/widgets/"..id,
+    ["name"]        = widget.settings._title,
+    ["type"]        = type,
+    ["description"] = description,
+    ["areaName"]    = "",
+    ["zoneName"]    = ""
+  }
+end
 
 -- Public API implementation
 function requestResources()
@@ -404,62 +394,22 @@ function requestResources()
   if success and apps then
     for name, app in pairs(apps) do
       for id, widget in pairs(app.widgets) do
+        local discovered_resource
         if name == "com.lametric.stopwatch" then
-          AddDiscoveredResource({
-            ["address"]     = widget.package.."/widgets/"..id,
-            ["name"]        = widget.settings._title,
-            ["type"]        = "_STOPWATCH",
-            ["description"] = "La metric stopwatch",
-            ["areaName"]    = "",
-            ["zoneName"]    = ""
-          })
+          discovered_resource = create_resource(id, widget, "_STOPWATCH", "La metric stopwatch")
         elseif name == "com.lametric.clock" then
-          AddDiscoveredResource({
-            ["address"]     = widget.package.."/widgets/"..id,
-            ["name"]        = widget.settings._title,
-            ["type"]        = "_CLOCK",
-            ["description"] = "La metric clock",
-            ["areaName"]    = "",
-            ["zoneName"]    = ""
-          })
+          discovered_resource = create_resource(id, widget, "_CLOCK", "La metric clock")
         elseif name == "com.lametric.countdown" then
-          AddDiscoveredResource({
-            ["address"]     = widget.package.."/widgets/"..id,
-            ["name"]        = widget.settings._title,
-            ["type"]        = "_COUNTDOWN",
-            ["description"] = "La metric countdown",
-            ["areaName"]    = "",
-            ["zoneName"]    = ""
-          })
+          discovered_resource = create_resource(id, widget, "_COUNTDOWN", "La metric countdown")
         elseif name == "com.lametric.radio" then
-          AddDiscoveredResource({
-            ["address"]     = widget.package.."/widgets/"..id,
-            ["name"]        = widget.settings._title,
-            ["type"]        = "_RADIO",
-            ["description"] = "La metric radio",
-            ["areaName"]    = "",
-            ["zoneName"]    = ""
-          })
+          discovered_resource = create_resource(id, widget, "_RADIO", "La metric radio")
         elseif name == "com.lametric.weather" then
-          AddDiscoveredResource({
-            ["address"]     = widget.package.."/widgets/"..id,
-            ["name"]        = widget.settings._title,
-            ["type"]        = "_WEATHER",
-            ["description"] = "La metric weather",
-            ["areaName"]    = "",
-            ["zoneName"]    = ""
-          })
+          discovered_resource = create_resource(id, widget, "_WEATHER", "La metric weather")
         else
-          AddDiscoveredResource({
-            ["address"]     = widget.package.."/widgets/"..id,
-            ["name"]        = widget.settings._title,
-            ["type"]        = "_WIDGET",
-            ["description"] = "La metric widget",
-            ["areaName"]    = "",
-            ["zoneName"]    = ""
-          })
+          discovered_resource = create_resource(id, widget, "_WIDGET", "La metric widget")
         end
 
+        AddDiscoveredResource(discovered_resource)
         number_of_resources = number_of_resources + 1
       end
     end
