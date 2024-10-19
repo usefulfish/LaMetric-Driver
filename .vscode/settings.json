@@ -39,6 +39,7 @@
         "Warn",
         "urlGet",
         "urlPut",
-        "numericArgument"
+        "numericArgument",
+        "stringArgumentRegEx"
     ]
 }
