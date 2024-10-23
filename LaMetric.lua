@@ -3,76 +3,113 @@ driver_label = "LaMetric"
 driver_load_system_help = "Allows integration with LaMetric Time device."
 driver_has_capture = false
 driver_help = [[
-example driver
-==============
+LaMetric TIME
+=============
 
-This driver supports communication with Lutron Radio RA2.
+This driver supports communication with the LaMetric TIME.
 
-Connection to a Radio RA2 system
---------------------------------
+Connection to the TIME device
+-----------------------------
 
-Communication with Radio RA2 is done via the Radio RA2 Main Repeater,
-which allows interaction with the system via 100 programmable virtual
-buttons (*phantom buttons*).
+Communication to the device is done using a primary resource for the TIME device itslef. This
+resource allows sending notifications, basic operation similar to the operating the buttins on
+the device, as well as control of simple settings.
 
-Connection settings consist of: IP address of the Main
-Repeater (default: 192.168.1.50), login (default: lutron), password
-(default: integration) and telnet IP port (default: 23).
+You will need to add one system per device you wish to control. Connection settings consist of: IP address or network name of the 
+LaMetric TIME device and an API key which can be obtained by accessing the settings on your smartphone app and requesting 
+it there.
+
+As the TIME does not support setting a static IP address directly, you must either use
+the advertised network name or assign the device a static IP on your router.
 
 Resources
-------------------
+---------------
 
 The supported resource types are:
 
-  + **Button**: a keypad or control unit button.
-  + **LED**: a single LED used for status.
+  + **_LAMETRIC TIME**: control of the device including notifications, basic operation and settings.
+  + **_CLOCK APP**: interaction with the alarm clock app.
+  + **_TIMER APP**: interaction with the countdown timer app.
+  + **_STOPWATCH APP**: interaction with the stopwatch app.
+  + **_RADIO APP**: interaction with the radio app.
+  + **_WEATHER APP**: interaction with the weather app.
+  + **_3RD PARTY APP**: generic app from the LaMetric MARKET - no app specific commands are avaiable.
 
-Resource address format
------------------------
+Resource addresses
+------------------
 
-Resource addresses use *Integration ID* which by default is a
-number, but can also be a user defined string; and a sub-address called 
-*Component Number*.
-
-## Availability of events and commands
-
-Lutron supports a lot of different hardware models and combinations.
-
-Not all hardware setups support the whole set of events and commands.
-
-Check the Lutron documentation (*Lutron Integration Protocol*), or use
-the monitoring facilities in BLI to verify that the hardware actually
-supports a command or event type.
-
-A typical example is the `_MULTI TAP` event, which is available on a
-limited combination of Lutron hardware.
+The IP for the device is defined at system drive level. The resource address for the TIME device and apps
+and set by resource discovery. For app, the unique address can change if you delete the appfrom your TIME deviceand re-install
+it - in this case you would nedd to use the resource discovery to get the new address and update it. 
 
 Events
 ---------------
-  + Button
-    - **PRESS**
-    - **RELEASE**
-    - **HOLD**
-    - **\_MULTI TAP**: Pressing on the button repeatedly
-    - **\_HOLD RELEASE**: Releasing a button after a long press (HOLD)
+The LaMetric TIME does not support events over its API, but the driver will poll For
+changes on the device and raise appropriate state update events as expected. Given that the primary
+usage of this drive would be to send notifications and some basic operation of the built-in apps, then
+it is not expected that you would rely on these updates so polling can be kept to a minimum.
 
 Commands
 -----------------
-  + Button
-    - **PRESS**
-    - **RELEASE**
-    - **HOLD**
-    - **\_MULTI TAP**: Pressing on the button repeatedly
-    - **\_HOLD RELEASE**: Releasing a button after a long press (HOLD)
+  + \_LAMETRIC TIME
+    - **\_NOTIFY**:
+    - **\_NOTIFY WITH DETAILS**:
+    - **\_NEXT APPLICATION**:
+    - **\_PREV APPLICATION**: Pressing on the button repeatedly
+    - **\_SET MODE**: Releasing a button after a long press (HOLD)
+    - **\_SET VOLUME**: 
+    - **\_SET SCREENSAVER**:
+  + \__CLOCK APP
+    - **\_ACTIVATE**: Makes the clock the currently displayed app.
+    - **\_SET ALARM**:
+    - **\_ENABLE ALARM**:
+    - **\_SET CLOCKFACE**:
+  + \_TIMER APP
+    - **\_ACTIVATE**: Makes the timer the currently displayed app.
+    - **\_START**:
+    - **\_PAUSE**:
+    - **\_RESET**:
+    - **\_CONFIGURE**:
+  + \_STOPWATCH APP
+    - **\_ACTIVATE**: Makes the stopwatch the currently displayed app.
+    - **\_START**:
+    - **\_PAUSE**:
+    - **\_RESET**:
+  + \_RADIO APP
+    - **\_ACTIVATE**: Makes the radio the currently displayed app.
+    - **\_PLAY**:
+    - **\_PLAY CHANNEL**:
+    - **\_STOP**:
+    - **\_NEXT**:
+    - **\_PREV**:
+  + \_WEATHER APP
+    - **\_ACTIVATE**: Makes the weather the currently displayed app.
+    - **\_FORECAST**:
+  + \_3RD PARTY APP
+    - **\_ACTIVATE**: Makes the 3rd party app the currently displayed app.
 
 Resource State
 --------------
-  + LED
-    - **\_STATE**: The state of the LED (0 means OFF and 1 ON)
+  + \_LAMETRIC TIME
+    - **\_MODE**: The state of the LED (0 means OFF and 1 ON)
+    - **\_VOLUME**: The state of the LED (0 means OFF and 1 ON)
+    - **\_SCREENSAVER ENABLED**: The state of the LED (0 means OFF and 1 ON)
+  + \__CLOCK APP
+    - **\_VISIBLE**: Indicates whether the app is currently displayed on the TIME device
+  + \_TIMER APP
+    - **\_VISIBLE**: Indicates whether the app is currently displayed on the TIME device
+  + \_STOPWATCH APP
+    - **\_VISIBLE**: Indicates whether the app is currently displayed on the TIME device
+  + \_RADIO APP
+    - **\_VISIBLE**: Indicates whether the app is currently displayed on the TIME device
+  + \_WEATHER APP
+    - **\_VISIBLE**: Indicates whether the app is currently displayed on the TIME device
+  + \_3RD PARTY APP
+    - **\_VISIBLE**: Indicates whether the app is currently displayed on the TIME device
 ]]
 
 driver_clear_discovered_resources_on_start = true
-driver_version = "0.1"
+driver_version = "1.0"
 
 local function intArgument(name, default_value, min_val, max_val, optionalArgs)
   local context_help
@@ -98,7 +135,7 @@ end
 local channel_arguments = {
   stringArgument("_laMetricTimeHost", "", { context_help = "The IP or host name of the LaMetric Time device" }),
   stringArgument("_laMetricTimeApiKey", "", { context_help = "The api key for the device as generated in the app" }),
-  intArgument("_poll_interval", 60, 1, 10000, { context_help = "Number of seconds to poll." })
+  intArgument("_pollInterval", 60, 1, 10000, { context_help = "Number of seconds between poll events." })
 }
 
 driver_channels = {
@@ -106,8 +143,8 @@ driver_channels = {
 }
 
 resource_types = {
-  ["_LAMETRIC TIME DEVICE"] = {
-    standardResourceType = "_LAMETRIC TIME DEVICE",
+  ["_LAMETRIC TIME"] = {
+    standardResourceType = "_LAMETRIC TIME",
     address = stringArgument("address", "ID", { context_help = "Device id." }),
     commands = {
       ["_NOTIFY"] = {
@@ -134,18 +171,18 @@ resource_types = {
       ["_NEXT APPLICATION"] = {
         arguments = {
         },
-        context_help = "Make the next application visible."
+        context_help = "Make the next app visible."
       },
       ["_PREV APPLICATION"] = {
         arguments = {
         },
-        context_help = "Make the previous application visible."
+        context_help = "Make the previous app visible."
       },
       ["_SET MODE"] = {
         arguments = {
           enumArgument("_MODE", { "MANUAL", "AUTO", "SCHEDULE", "KIOSK" }, "MANUAL", { context_help = "The mode of the device."})
         },
-        context_help = "Set the mode of the device."
+        context_help = "Set the app switching mode of the device."
       },
       ["_SET VOLUME"] = {
         arguments = {
@@ -164,28 +201,28 @@ resource_types = {
       boolArgument("_SCREENSAVER ENABLED", false, { context_help = "Screensaver enabled." })
     }
   },
-  ["_WIDGET"] = {
-    standardResourceType = "_WIDGET",
+  ["_3RD PARTY APP"] = {
+    standardResourceType = "_3RD PARTY APP",
     address = stringArgument("address", "ID", { context_help = "Device id." }),
     commands = {
       ["_ACTIVATE"] = {
         arguments = {
         },
-        context_help = "Activate this widget."
+        context_help = "Activate this app."
       }
     },
     states = {
-      boolArgument("_VISIBLE", false, { context_help = "Indicates whether the widget is currently displayed on the TIME device"})
+      boolArgument("_VISIBLE", false, { context_help = "Indicates whether the app is currently displayed on the TIME device"})
     }
   },
-  ["_STOPWATCH"] = {
-    standardResourceType = "_STOPWATCH",
+  ["_STOPWATCH APP"] = {
+    standardResourceType = "_STOPWATCH APP",
     address = stringArgument("address", "ID", { context_help = "Device id." }),
     commands = {
       ["_ACTIVATE"] = {
         arguments = {
         },
-        context_help = "Activate this widget."
+        context_help = "Activate this app."
       },
       ["_START"] = {
         arguments = {
@@ -204,17 +241,17 @@ resource_types = {
       }
     },
     states = {
-      boolArgument("_VISIBLE", false, { context_help = "Indicates whether the widget is currently displayed on the TIME device"})
+      boolArgument("_VISIBLE", false, { context_help = "Indicates whether the app is currently displayed on the TIME device"})
     }
   },
-  ["_RADIO"] = {
-    standardResourceType = "_RADIO",
+  ["_RADIO APP"] = {
+    standardResourceType = "_RADIO APP",
     address = stringArgument("address", "ID", { context_help = "Device id." }),
     commands = {
       ["_ACTIVATE"] = {
         arguments = {
         },
-        context_help = "Activate this widget."
+        context_help = "Activate this app."
       },
       ["_PLAY"] = {
         arguments = {
@@ -244,23 +281,28 @@ resource_types = {
       }
     },
     states = {
-      boolArgument("_VISIBLE", false, { context_help = "Indicates whether the widget is currently displayed on the TIME device"})
+      boolArgument("_VISIBLE", false, { context_help = "Indicates whether the app is currently displayed on the TIME device"})
     }
   },
-  ["_CLOCK"] = {
-    standardResourceType = "_CLOCK",
+  ["_CLOCK APP"] = {
+    standardResourceType = "_CLOCK APP",
     address = stringArgument("address", "ID", { context_help = "Device id." }),
     commands = {
       ["_ACTIVATE"] = {
         arguments = {
         },
-        context_help = "Activate this widget."
+        context_help = "Activate this app."
       },
       ["_SET ALARM"] = {
         arguments = {
           boolArgument("_ENABLED", true, { context_help = "Activates the alarm if set to true, deactivates otherwise."}),
-          stringArgumentRegEx("_TIME", "07:00:00", "[0-2][0-9]:[0-5][0-9]:[0-5][0-9]", { context_help = " Local time in format \"HH:mm:ss\"."}),
+          stringArgumentRegEx("_TIME", "07:00", "[0-2][0-9]:[0-5][0-9]\\(\\?::[0-5][0-9]\\)\\?", { context_help = " Local time in format \"HH:mm:ss\"."}),
           boolArgument("_WAKE WITH RADIO", false, { context_help = "If true, radio will be activated when alarm goes off."})
+        }
+      },
+      ["_ENABLE ALARM"] = {
+        arguments = {
+          boolArgument("_ENABLED", true, { context_help = "Activates the alarm if set to true, deactivates otherwise."})
         }
       },
       ["_SET CLOCKFACE"] = {
@@ -270,17 +312,17 @@ resource_types = {
       }
     },
     states = {
-      boolArgument("_VISIBLE", false, { context_help = "Indicates whether the widget is currently displayed on the TIME device"})
+      boolArgument("_VISIBLE", false, { context_help = "Indicates whether the app is currently displayed on the TIME device"})
     }
   },
-  ["_COUNTDOWN"] = {
-    standardResourceType = "_COUNTDOWN",
+  ["_TIMER APP"] = {
+    standardResourceType = "_TIMER APP",
     address = stringArgument("address", "ID", { context_help = "Device id." }),
     commands = {
       ["_ACTIVATE"] = {
         arguments = {
         },
-        context_help = "Activate this widget."
+        context_help = "Activate this app."
       },
       ["_START"] = {
         arguments = {
@@ -305,17 +347,17 @@ resource_types = {
       }
     },
     states = {
-      boolArgument("_VISIBLE", false, { context_help = "Indicates whether the widget is currently displayed on the TIME device"})
+      boolArgument("_VISIBLE", false, { context_help = "Indicates whether the app is currently displayed on the TIME device"})
     }
   },
-  ["_WEATHER"] = {
-    standardResourceType = "_WEATHER",
+  ["_WEATHER APP"] = {
+    standardResourceType = "_WEATHER APP",
     address = stringArgument("address", "ID", { context_help = "Device id." }),
     commands = {
       ["_ACTIVATE"] = {
         arguments = {
         },
-        context_help = "Activate this widget."
+        context_help = "Activate this app."
       },
       ["_FORECAST"] = {
         arguments = {
@@ -324,7 +366,7 @@ resource_types = {
       }
     },
     states = {
-      boolArgument("_VISIBLE", false, { context_help = "Indicates whether the widget is currently displayed on the TIME device"})
+      boolArgument("_VISIBLE", false, { context_help = "Indicates whether the app is currently displayed on the TIME device"})
     }
   }
 }
@@ -466,6 +508,8 @@ local function clock_runtime(command, resource, arguments)
     activate(resource)
   elseif command == "_SET ALARM" then
     action(resource, "clock.alarm", { enabled = arguments._ENABLED, time = arguments._TIME, wake_with_radio = arguments["_WAKE WITH RADIO"]})
+  elseif command == "_ENABLE ALARM" then
+    action(resource, "clock.alarm", { enabled = arguments._ENABLED  })
   elseif command == "_SET CLOCKFACE" then
     action(resource, "clock.clockface", { type = string.lower(arguments._TYPE)})
   else
@@ -537,7 +581,7 @@ function requestResources()
     AddDiscoveredResource({
       ["address"]     = device.serial_number,
       ["name"]        = device.name,
-      ["type"]        = "_LAMETRIC TIME DEVICE",
+      ["type"]        = "_LAMETRIC TIME",
       ["description"] = "LaMetric TIME device",
       ["areaName"]    = "",
       ["zoneName"]    = ""
@@ -553,17 +597,17 @@ function requestResources()
       for id, widget in pairs(app.widgets) do
         local discovered_resource
         if name == "com.lametric.stopwatch" then
-          discovered_resource = create_resource(id, widget, "_STOPWATCH", "La metric stopwatch widget")
+          discovered_resource = create_resource(id, widget, "_STOPWATCH APP", "La metric stopwatch app")
         elseif name == "com.lametric.clock" then
-          discovered_resource = create_resource(id, widget, "_CLOCK", "La metric clock widget")
+          discovered_resource = create_resource(id, widget, "_CLOCK APP", "La metric clock app")
         elseif name == "com.lametric.countdown" then
-          discovered_resource = create_resource(id, widget, "_COUNTDOWN", "La metric timer widget")
+          discovered_resource = create_resource(id, widget, "_TIMER APP", "La metric timer app")
         elseif name == "com.lametric.radio" then
-          discovered_resource = create_resource(id, widget, "_RADIO", "La metric radio widget")
+          discovered_resource = create_resource(id, widget, "_RADIO APP", "La metric radio app")
         elseif name == "com.lametric.weather" then
-          discovered_resource = create_resource(id, widget, "_WEATHER", "La metric weather widget")
+          discovered_resource = create_resource(id, widget, "_WEATHER APP", "La metric weather app")
         else
-          discovered_resource = create_resource(id, widget, "_WIDGET", "La metric widget")
+          discovered_resource = create_resource(id, widget, "_3RD PARTY APP", "La metric app")
         end
 
         AddDiscoveredResource(discovered_resource)
@@ -578,7 +622,7 @@ end
 function process()
   local success, device = get_from_url("device")
   if success and device then
-    local resource = readResource("_LAMETRIC TIME DEVICE", device.serial_number)
+    local resource = readResource("_LAMETRIC TIME", device.serial_number)
     if resource then
       local state = {
          _MODE = string.upper(device.mode),
@@ -597,17 +641,17 @@ function process()
       for id, widget in pairs(app.widgets) do
         local typeId
         if name == "com.lametric.stopwatch" then
-          typeId = "_STOPWATCH"
+          typeId = "_STOPWATCH APP"
         elseif name == "com.lametric.clock" then
-          typeId = "_CLOCK"
+          typeId = "_CLOCK APP"
         elseif name == "com.lametric.countdown" then
-          typeId = "_COUNTDOWN"
+          typeId = "_TIMER APP"
         elseif name == "com.lametric.radio" then
-          typeId = "_RADIO"
+          typeId = "_RADIO APP"
         elseif name == "com.lametric.weather" then
-          typeId = "_WEATHER"
+          typeId = "_WEATHER APP"
         else
-          typeId = "_WIDGET"
+          typeId = "_3RD PARTY APP"
         end
 
         local resource = readResource(typeId, widget.package.."/widgets/"..id)
@@ -618,25 +662,25 @@ function process()
     end
   end
 
-  channel.retry("Polling completed", channel.attributes("_poll_interval"))
+  channel.retry("Polling completed", channel.attributes("_pollInterval"))
 
   return CONST.POLLING
 end
 
 function executeCommand(command, resource, arguments)
-  if resource.typeId == "_LAMETRIC TIME DEVICE" then
+  if resource.typeId == "_LAMETRIC TIME" then
     notification_runtime(command, resource, arguments)
-  elseif resource.typeId == "_STOPWATCH" then
+  elseif resource.typeId == "_STOPWATCH APP" then
     stopwatch_runtime(command, resource, arguments)
-  elseif resource.typeId == "_CLOCK" then
+  elseif resource.typeId == "_CLOCK APP" then
     clock_runtime(command, resource, arguments)
-  elseif resource.typeId == "_COUNTDOWN" then
+  elseif resource.typeId == "_TIMER APP" then
     countdown_runtime(command, resource, arguments)
-  elseif resource.typeId == "_WEATHER" then
+  elseif resource.typeId == "_WEATHER APP" then
     weather_runtime(command, resource, arguments)
-  elseif resource.typeId == "_RADIO" then
+  elseif resource.typeId == "_RADIO APP" then
     radio_runtime(command, resource, arguments)
-  elseif resource.typeId == "_WIDGET" then
+  elseif resource.typeId == "_3RD PARTY APP" then
     widget_runtime(command, resource, arguments)
   else
     Warn("Unknown resource type '"..resource.typeId.."'")
