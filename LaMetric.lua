@@ -160,7 +160,7 @@ resource_types = {
           enumArgument("_ICON TYPE", { "NONE", "INFO", "ALERT" }, "NONE", { context_help = "" }),
           stringArgument("_ICON", "2867", { context_help = "Icon id or base64 encoded binary"}),
           stringArgument("_MESSAGE", "", { context_help = "Message to display." }),
-          intArgument("_LIFETIME", 120000, 1000, 1000000, { context_help = "Lifetime of the notification in milliseconds. Default is 2 minutes." }),
+          intArgument("_LIFETIME", 120, 1, 1000000, { context_help = "Lifetime of the notification in seconds. Default is 2 minutes." }),
           intArgument("_CYCLES", 1, 0, 100, { context_help = "The number of times message should be displayed. If cycles is set to 0, notification will stay on the screen until user dismisses it manually."}),
           enumArgument("_SOUND CATEGORY", { "ALARMS", "NOTIFICATIONS" }, "NOTIFICATIONS"),
           stringArgument("_SOUND ID", "notification"),
@@ -197,7 +197,7 @@ resource_types = {
     },
     states = {
       enumArgument("_MODE", { "MANUAL", "AUTO", "SCHEDULE", "KIOSK" }, "MANUAL", { context_help = "The mode of the device."}),
-      intArgument("_VOLUME", 90, 0, 100, { context_help = "The volume set on the device." }),
+      intArgument("_VOLUME", 100, 0, 100, { context_help = "The volume set on the device." }),
       boolArgument("_SCREENSAVER ENABLED", false, { context_help = "Screensaver enabled." })
     }
   },
@@ -327,17 +327,17 @@ resource_types = {
       ["_START"] = {
         arguments = {
         },
-        context_help = "Start the countdown."
+        context_help = "Start the timer."
       },
       ["_PAUSE"] = {
         arguments = {
         },
-        context_help = "Pause the countdown."
+        context_help = "Pause the timer."
       },
       ["_RESET"] = {
         arguments = {
         },
-        context_help = "Reset the countdown."
+        context_help = "Reset the timer."
       },
       ["_CONFIGURE"] = {
         arguments = {
@@ -448,7 +448,7 @@ local function notification_runtime(command, resource, arguments)
     local payload = {
       priority = string.lower(arguments._PRIORITY),
       icon_type = string.lower(arguments["_ICON TYPE"]),
-      lifetime = arguments._LIFETIME,
+      lifetime = arguments._LIFETIME * 1000,
       model = {
         frames = {
           {
