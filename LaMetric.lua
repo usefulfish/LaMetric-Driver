@@ -2,110 +2,188 @@
 driver_label = "LaMetric"
 driver_load_system_help = "Allows integration with LaMetric Time device."
 driver_has_capture = false
+--driver_help = "LaMetric-Driver-Help.md"
 driver_help = [[
-LaMetric TIME
-=============
+## LaMetric TIME
 
-This driver supports communication with the LaMetric TIME.
+The primamy usage would be to display notifications, but resoures are also available which allow interaction
+with the various built-in apps.
 
-Connection to the TIME device
------------------------------
+### Connection to the TIME device
 
-Communication to the device is done using a primary resource for the TIME device itslef. This
+You will need to add one instance of the driver per LaMetric TIME device you wish to
+interact with. Once connected, each instacne will talk to a single device and expose 
+the apps available on it via resource discovery.
+
+The TIME device does not support setting a static IP address directly, you must either use
+the advertised network name availble in the settings, or assign the device a network name 
+or static IP using your router.
+
+Connection settings are:
+- **La metric time api key**: This can be obtained by accessing the settings for the device from the smartphone app and requesting it there
+- **La metric time host**: IP address or network name of the LaMetric TIME device
+- **Poll interval**: The number of seconds betwwen polling for resource state updates. Probably should keep polling to a minimum.
+- **Check server certificate**: This shouild be turned off
+
+### Available Resources
+
+Allows interaction wih the device via a primary resource for the TIME device itslef. This
 resource allows sending notifications, basic operation similar to the operating the buttins on
-the device, as well as control of simple settings.
-
-You will need to add one system per device you wish to control. Connection settings consist of: IP address or network name of the 
-LaMetric TIME device and an API key which can be obtained by accessing the settings on your smartphone app and requesting 
-it there.
-
-As the TIME does not support setting a static IP address directly, you must either use
-the advertised network name or assign the device a static IP on your router.
-
-Resources
----------------
+the device, as well as control of some simple settings.
 
 The supported resource types are:
 
-  + **_LAMETRIC TIME**: control of the device including notifications, basic operation and settings.
-  + **_CLOCK APP**: interaction with the alarm clock app.
-  + **_TIMER APP**: interaction with the countdown timer app.
-  + **_STOPWATCH APP**: interaction with the stopwatch app.
-  + **_RADIO APP**: interaction with the radio app.
-  + **_WEATHER APP**: interaction with the weather app.
-  + **_3RD PARTY APP**: generic app from the LaMetric MARKET - no app specific commands are avaiable.
++ **\_LAMETRIC TIME**: Main interaction with the device for notifications and some basic settings.
++ **\_CLOCK APP**: interaction with the built-in alarm clock app.
++ **\_TIMER APP**: interaction with the built-in countdown timer app.
++ **\_STOPWATCH APP**: interaction with the built-in stopwatch app.
++ **\_RADIO APP**: interaction with the built-in radio app.
++ **\_WEATHER APP**: interaction with the built-in weather app.
++ **\_3RD PARTY APP**: interaction with a generic app from the LaMetric MARKET. No app specific commands are avaiable.
 
-Resource addresses
-------------------
 
-The IP for the device is defined at system drive level. The resource address for the TIME device and apps
-and set by resource discovery. For app, the unique address can change if you delete the appfrom your TIME deviceand re-install
-it - in this case you would nedd to use the resource discovery to get the new address and update it. 
+This driver is tested against firmware running **v2.3.0** of the API, but full support should only 
+require **v2.1.0**. The *_LAMETRIC TIME* notifications and  settings (except screensaver and 
+app control) should work with **v2.0** but apps and screensaver setting is not supported in this version.
 
-Events
----------------
+### Resource addresses and discovery
+
+Resource discovery is available and is required becuse of the way in which the TIME device 
+allocates address to applications. The primary devica and all installed apps will be listed 
+for you to add to your probject. Only installed apps will show up, so if an app is removed from the
+device then it will not be listed.
+
+The addresses for the TIME device and apps are populated by the resource discovery. For an app, the unique address 
+can change if you delete the app from your TIME deviceand re-install it - in this case you would need 
+to use the resource discovery again to find the new addres and then you can update it from there. 
+
+### Resource Events
+
 The LaMetric TIME does not support events over its API, but the driver will poll For
 changes on the device and raise appropriate state update events as expected. Given that the primary
 usage of this drive would be to send notifications and some basic operation of the built-in apps, then
-it is not expected that you would rely on these updates so polling can be kept to a minimum.
+it is not expected that you would rely on these updates so polling should be kept to a minimum.
 
-Commands
------------------
-  + \_LAMETRIC TIME
-    - **\_NOTIFY**:
-    - **\_NOTIFY WITH DETAILS**:
-    - **\_NEXT APPLICATION**:
-    - **\_PREV APPLICATION**: Pressing on the button repeatedly
-    - **\_SET MODE**: Releasing a button after a long press (HOLD)
-    - **\_SET VOLUME**: 
-    - **\_SET SCREENSAVER**:
-  + \__CLOCK APP
-    - **\_ACTIVATE**: Makes the clock the currently displayed app.
-    - **\_SET ALARM**:
-    - **\_ENABLE ALARM**:
-    - **\_SET CLOCKFACE**:
-  + \_TIMER APP
-    - **\_ACTIVATE**: Makes the timer the currently displayed app.
-    - **\_START**:
-    - **\_PAUSE**:
-    - **\_RESET**:
-    - **\_CONFIGURE**:
-  + \_STOPWATCH APP
-    - **\_ACTIVATE**: Makes the stopwatch the currently displayed app.
-    - **\_START**:
-    - **\_PAUSE**:
-    - **\_RESET**:
-  + \_RADIO APP
-    - **\_ACTIVATE**: Makes the radio the currently displayed app.
-    - **\_PLAY**:
-    - **\_PLAY CHANNEL**:
-    - **\_STOP**:
-    - **\_NEXT**:
-    - **\_PREV**:
-  + \_WEATHER APP
-    - **\_ACTIVATE**: Makes the weather the currently displayed app.
-    - **\_FORECAST**:
-  + \_3RD PARTY APP
-    - **\_ACTIVATE**: Makes the 3rd party app the currently displayed app.
+### Resource Commands
 
-Resource State
---------------
-  + \_LAMETRIC TIME
-    - **\_MODE**: The state of the LED (0 means OFF and 1 ON)
-    - **\_VOLUME**: The state of the LED (0 means OFF and 1 ON)
-    - **\_SCREENSAVER ENABLED**: The state of the LED (0 means OFF and 1 ON)
-  + \__CLOCK APP
-    - **\_VISIBLE**: Indicates whether the app is currently displayed on the TIME device
-  + \_TIMER APP
-    - **\_VISIBLE**: Indicates whether the app is currently displayed on the TIME device
-  + \_STOPWATCH APP
-    - **\_VISIBLE**: Indicates whether the app is currently displayed on the TIME device
-  + \_RADIO APP
-    - **\_VISIBLE**: Indicates whether the app is currently displayed on the TIME device
-  + \_WEATHER APP
-    - **\_VISIBLE**: Indicates whether the app is currently displayed on the TIME device
-  + \_3RD PARTY APP
-    - **\_VISIBLE**: Indicates whether the app is currently displayed on the TIME device
+#### Device Notifications
+
+The primary use case wold be to sned notifications and alerts to be displayed on the TIME device. The device supports
+rich customisation of these notifications so we have exposed two commands for this: a basic one to easily send a simple notification to the device, and an enhanced one giving the full range of customisation.
+
+*\_LAMETRIC TIME*
+
+- **\_NOTIFY**: Display a simple message on the TIME device.
+  - *\_NOTIFICATION PRIORITY*: Controls how the notification is handled by the device
+    - INFO: This level of notification should be used for notifications like news, weather, temperature, etc. This notification will not be shown when screensaver is active.
+    - WARNING: Should be used to notify the user about something important but not critical. For example, events like “someone is coming home” should use this priority when sending notifications.
+    - CRITICAL: The most important notifications. Interrupts notification with priority INFO or WARNING and is displayed even if screensaver is active. Use with care as these notifications can pop in the middle of the night. Must be used only for really important notifications like notifications from smoke detectors, water leak sensors, etc. Use it for events that require human interaction immediately.
+  - *\_MESSAGE*: The text of the message to display
+- **\_NOTIFY WITH DETAILS**: Display a customised message on the TIME device. Arguments are populated with defaults which match the simple message command
+  - *\_MESSAGE*: The text of the message to display
+  - *\_MESSAGE ICON*: Icon id or base64 encoded binary. There is a huge array of possible options. Choose here: [LaMetric Icons](https://developer.lametric.com/icons)
+  - *\_MESSAGE REPEAT*: The number of times message should be repeated. If this is set to 0, notification will stay on the screen until user dismisses it manually.
+  - *\_NOTIFICATION LIFETIME*: Lifetime of the notification in seconds. Default is 2 minutes
+  - *\_NOTIFICATION PRIORITY*: As above
+  - *\_NOTIFICATION TYPE*: Indicates the nature of the notification. This defines an optional "announcing" icon which is displayed before the message is displayed.
+    - NONE: No notification preabble will be shown.
+    - INFO: "i" icon will be displayed prior to the notification. Means that notification contains information, no need to take actions on it.
+    - ALERT: "!!!" icon will be displayed prior to the notification. Use it when you want the user to pay attention to that notification as it indicates that something bad happened and user must take immediate action.
+  - *\_SOUND CATEGORY*: Indicates the category of the sound id selected.
+    - ALARMS: The sound id supplied should be one of the *alarm sound ids* listed below
+    - NOTIFICATIONS: The sound id supplied should be one of the *notification sound ids* listed below
+  - *\_SOUND ID*: Should be one of the ids listed below for the above category e.g. alarm1 or dog etc.
+  - *\_SOUND REPEAT*: Defines the number of times sound must be played. If set to 0 sound will be played until notification is dismissed
+
+Full list of **alarm sound ids** currently defined: alarm1, alarm2, alarm3, alarm4, alarm5, alarm6, alarm7 ,alarm8,alarm9, alarm10, alarm11, alarm12, alarm13
+
+Full list of **notification sound ids** currently defined: bicycle, car, cash, cat, dog, dog2, energy, knock-knock, letter_email, lose1, lose2, 
+negative1, negative2, negative3, negative4, negative5, 
+notification, notification2, notification3, notification4,
+open_door, positive1, positive2, positive3, positive4, positive5, positive6
+statistic, thunder, water1, water2, win, win2, wind, wind_short
+
+#### Device General Commands
+
+The *_LAMETRIC TIME* resource also supports the following app and settings commands:
+
++ *\_LAMETRIC TIME*
+  - **\_NEXT APPLICATION**: Make the next app visible
+  - **\_PREV APPLICATION**: Make the previous app visible
+  - **\_SET MODE**: Set the app switching mode of the device. This might be required if you want a selected app to remain visible.
+    - *\_MODE*: The mode to select - see resource states below
+  - **\_SET VOLUME**: Set the volume of the device. This will affect sounds played as part of a notification as well as the radio.
+    - *\_VOLUME*: The volume to set. 
+  - **\_SET SCREENSAVER**: Enables or disables the screensaver. This might be required because app switching will not work when the screensaver is active.
+    - *\_ENABLED*: True to enable the screensaver, false to disable it.
+
+#### Interaction with aps and app switching
+
++ \_CLOCK APP
+  - **\_ACTIVATE**: Makes the clock the currently displayed app.
+  - **\_ENABLE ALARM**: Turn the alarm on or off
+    - *\_ENABLED*: Turns on the alarm if set to true, turns it off otherwise
+    - *\_WAKE WITH RADIO*: If true, radio will be activated when alarm goes off
+  - **\_SET ALARM**: Change the time and action of the alarm
+    - *\_ENABLED*: Turns on the alarm if set to true, turns it off otherwise
+    - *\_TIME*: Local time in format "HH:mm" or "HH:mm:ss"
+    - *\_WAKE WITH RADIO*: If true, radio will be activated when alarm goes off
+  - **\_SET CLOCKFACE**:
+    - *\_TYPE*:
+      - NONE:
+      - WEATHER:
+      - PAGE_A_DAY:
++ \_TIMER APP
+  - **\_ACTIVATE**: Makes the timer the currently displayed app.
+  - **\_START**: Start the timer
+  - **\_PAUSE**: Pause the timer
+  - **\_RESET**: Reset the timer
+  - **\_CONFIGURE**:
+    - *\_DURATION*: Time in seconds
+    - *\_START NOW*: If set to true countdown will start immediately
++ \_STOPWATCH APP
+  - **\_ACTIVATE**: Makes the stopwatch the currently displayed app.
+  - **\_START**: Start the stopwatch
+  - **\_PAUSE**: Pause the stopwatch
+  - **\_RESET**: Reset the stopwatch
++ \_RADIO APP
+  - **\_ACTIVATE**: Makes the radio the currently displayed app.
+  - **\_PLAY**: Start the radio
+  - **\_PLAY CHANNEL**: Start a specific raidio station
+    - *\_INDEX*: The station to play
+  - **\_STOP**: Stop the radio
+  - **\_NEXT**: Next radio station
+  - **\_PREV**: Previous radio station
++ \_WEATHER APP
+  - **\_ACTIVATE**: Makes the weather the currently displayed app.
+  - **\_FORECAST**: Display the weather forecast
++ \_3RD PARTY APP
+  - **\_ACTIVATE**: Makes the 3rd party app the currently displayed app.
+
+### Resource States
+
+The main device resource has state which is updated on each poll.
+
++ \_LAMETRIC TIME
+  - **\_MODE**:
+    - *MANUAL*: Click to scroll mode, when user can manually switch between apps
+    - *AUTO*: Auto-scroll mode, when the device switches between apps automatically
+    - *SCHEDULE*: Mode when apps get switched according to a schedule
+    - *KIOSK*: Kiosk mode when single app is locked on the device
+  - **\_VOLUME**: The current volums set on the device
+  - **\_SCREENSAVER ENABLED**: Indicates whether the screen save is allowed to operate
+
+All the app resources simply expose a single state which indicates whether the app if currently visible 
+on the device. Only one app can be visible at a time and the state is only updated on polling.
+  
++ \_CLOCK APP, \_TIMER APP, \_STOPWATCH APP, \_RADIO APP, \_WEATHER APP and \_3RD PARTY APP
+  - **\_VISIBLE**: Indicates whether the app is currently displayed on the TIME device
+
+### Change Log
+
+#### v1.0 | 30/10/2024
+
+  - Initial version
 ]]
 
 driver_clear_discovered_resources_on_start = true
@@ -149,19 +227,19 @@ resource_types = {
     commands = {
       ["_NOTIFY"] = {
         arguments = {
-          enumArgument("_PRIORITY", { "INFO", "WARNING", "CRITICAL" }, "INFO", { context_help = "" }),
           stringArgument("_MESSAGE", "", { context_help = "Message to display." }),
+          enumArgument("_NOTIFICATION PRIORITY", { "INFO", "WARNING", "CRITICAL" }, "INFO", { context_help = "" })
         },
         context_help = "Displays an alert."
       },
       ["_NOTIFY WITH DETAILS"] = {
         arguments = {
-          enumArgument("_PRIORITY", { "INFO", "WARNING", "CRITICAL" }, "INFO", { context_help = "" }),
-          enumArgument("_ICON TYPE", { "NONE", "INFO", "ALERT" }, "NONE", { context_help = "" }),
-          stringArgument("_ICON", "2867", { context_help = "Icon id or base64 encoded binary"}),
           stringArgument("_MESSAGE", "", { context_help = "Message to display." }),
-          intArgument("_LIFETIME", 120, 1, 1000000, { context_help = "Lifetime of the notification in seconds. Default is 2 minutes." }),
-          intArgument("_CYCLES", 1, 0, 100, { context_help = "The number of times message should be displayed. If cycles is set to 0, notification will stay on the screen until user dismisses it manually."}),
+          stringArgument("_MESSAGE ICON", "2867", { context_help = "Icon id or base64 encoded binary"}),
+          intArgument("_MESSAGE REPEAT", 1, 0, 100, { context_help = "The number of times message should be displayed. If cycles is set to 0, notification will stay on the screen until user dismisses it manually."}),
+          intArgument("_NOTIFICATION LIFETIME", 120, 1, 1000000, { context_help = "Lifetime of the notification in seconds. Default is 2 minutes." }),
+          enumArgument("_NOTIFICATION PRIORITY", { "INFO", "WARNING", "CRITICAL" }, "INFO", { context_help = "" }),
+          enumArgument("_NOTIFICATION TYPE", { "NONE", "INFO", "ALERT" }, "NONE", { context_help = "" }),
           enumArgument("_SOUND CATEGORY", { "ALARMS", "NOTIFICATIONS" }, "NOTIFICATIONS"),
           stringArgument("_SOUND ID", "notification"),
           intArgument("_SOUND REPEAT", 1, 0, 100, { context_help = "Defines the number of times sound must be played. If set to 0 sound will be played until notification is dismissed."})
@@ -302,7 +380,8 @@ resource_types = {
       },
       ["_ENABLE ALARM"] = {
         arguments = {
-          boolArgument("_ENABLED", true, { context_help = "Activates the alarm if set to true, deactivates otherwise."})
+          boolArgument("_ENABLED", true, { context_help = "Activates the alarm if set to true, deactivates otherwise."}),
+          boolArgument("_WAKE WITH RADIO", false, { context_help = "If true, radio will be activated when alarm goes off."})
         }
       },
       ["_SET CLOCKFACE"] = {
@@ -396,7 +475,7 @@ local function rest_request(method, endpoint, data)
 
   if success ~= true then
     driver.setError()
-    Error("Error response: "..result)
+    Warn("Error response: "..result)
     return false, nil
   else
     driver.setOnline()
@@ -433,7 +512,7 @@ end
 local function notification_runtime(command, resource, arguments)
   if command == "_NOTIFY" then
     local payload = {
-      priority = string.lower(arguments._PRIORITY),
+      priority = string.lower(arguments["_NOTIFICATION PRIORITY"]),
       model = {
         frames = {
           {
@@ -446,13 +525,13 @@ local function notification_runtime(command, resource, arguments)
     post_to_url("device/notifications", payload)
   elseif command == "_NOTIFY WITH DETAILS" then
     local payload = {
-      priority = string.lower(arguments._PRIORITY),
-      icon_type = string.lower(arguments["_ICON TYPE"]),
-      lifetime = arguments._LIFETIME * 1000,
+      priority = string.lower(arguments["_NOTIFICATION PRIORITY"]),
+      icon_type = string.lower(arguments["_NOTIFICATION TYPE"]),
+      lifetime = arguments["_NOTIFICATION LIFETIME"] * 1000,
       model = {
         frames = {
           {
-            icon = arguments._ICON,
+            icon = arguments["_MESSAGE ICON"],
             text = arguments._MESSAGE,
           }
         },
@@ -461,7 +540,7 @@ local function notification_runtime(command, resource, arguments)
           id = arguments["_SOUND ID"],
           ["repeat"] = arguments["_SOUND REPEAT"]
         },
-        cycles = arguments._CYCLES
+        cycles = arguments["_MESSAGE REPEAT"]
       }
     }
 
@@ -475,7 +554,7 @@ local function notification_runtime(command, resource, arguments)
   elseif command == "_SET VOLUME" then
     put_to_url("device/audio",{ volume = arguments._VOLUME })
   elseif command == "_SET SCREENSAVER" then
-    put_to_url("device/display",{ screensaver = { enabled = arguments._ENABLED }})
+    put_to_url("device/display", { screensaver = { enabled = arguments._ENABLED }})
   else
     Warn("Unknown command '"..command.."'")
   end
@@ -509,7 +588,7 @@ local function clock_runtime(command, resource, arguments)
   elseif command == "_SET ALARM" then
     action(resource, "clock.alarm", { enabled = arguments._ENABLED, time = arguments._TIME, wake_with_radio = arguments["_WAKE WITH RADIO"]})
   elseif command == "_ENABLE ALARM" then
-    action(resource, "clock.alarm", { enabled = arguments._ENABLED  })
+    action(resource, "clock.alarm", { enabled = arguments._ENABLED, wake_with_radio = arguments["_WAKE WITH RADIO"] })
   elseif command == "_SET CLOCKFACE" then
     action(resource, "clock.clockface", { type = string.lower(arguments._TYPE)})
   else
@@ -626,9 +705,13 @@ function process()
     if resource then
       local state = {
          _MODE = string.upper(device.mode),
-         _VOLUME = device.audio.volume,
-         ["_SCREENSAVER ENABLED"] = device.display.screensaver.enabled
+         _VOLUME = device.audio.volume
         }
+
+      local screensaver = device.display.screensaver
+      if screensaver ~= nil then --screensaver is not supported in all versions
+        state["_SCREENSAVER ENABLED"] = screensaver.enabled
+      end
 
       setResourceState(resource.typeId, resource.address, state)
     end
