@@ -121,10 +121,10 @@ The *_LAMETRIC TIME* resource also supports the following app and settings comma
 
 + \_CLOCK APP
   - **\_ACTIVATE**: Makes the clock the currently displayed app.
-  - **\_ENABLE ALARM**: Turn the alarm on or off
+  - **\_ENABLE ALARM**: Turn the alarm on or off. This will act on the *first* alarm set on the TIME device.
     - *\_ENABLED*: Turns on the alarm if set to true, turns it off otherwise
     - *\_WAKE WITH RADIO*: If true, radio will be activated when alarm goes off
-  - **\_SET ALARM**: Change the time and action of the alarm
+  - **\_SET ALARM**: Change the time and action of the alarm for a specified time. This command will create a new alarm or mofidy an existing alarm if one already exists matching the supplied time.
     - *\_ENABLED*: Turns on the alarm if set to true, turns it off otherwise
     - *\_TIME*: Local time in format "HH:mm" or "HH:mm:ss"
     - *\_WAKE WITH RADIO*: If true, radio will be activated when alarm goes off
@@ -450,6 +450,15 @@ resource_types = {
   }
 }
 
+---@alias GeneralStates { [string]:integer|string|boolean } }
+---@alias GeneralArguments { [string]:integer|string|boolean }
+---@alias GeneralResource { typeId: string, address:string, states: GeneralStates }
+
+---@alias JsonDocument table
+---@alias Headers {[string]:string})
+---@alias Payload JsonDocument|string
+
+---@return Headers
 local function create_headers()
   return {
     ["Content-Type"] = "application/json",
@@ -457,10 +466,16 @@ local function create_headers()
   }
 end
 
+---@param url string
+---@return string
 local function create_url(url)
   return "https://"..channel.attributes("_laMetricTimeHost")..":4343/api/v2/"..url
 end
 
+---@param method fun(url:string, payload:Payload?, headers:Headers):boolean, string
+---@param endpoint string
+---@param data Payload?
+---@return boolean, JsonDocument?
 local function rest_request(method, endpoint, data)
   local url = create_url(endpoint)
   local payload = data or ""
@@ -484,22 +499,36 @@ local function rest_request(method, endpoint, data)
   end
 end
 
+---@param endpoint string
+---@param data Payload?
+---@return boolean, JsonDocument?
 local function post_to_url(endpoint, data)
   return rest_request(urlPost, endpoint, data)
 end
 
+---@param endpoint string
+---@param data Payload?
+---@return boolean, JsonDocument?
 local function put_to_url(endpoint, data)
   return rest_request(urlPut, endpoint, data)
 end
 
+---@param endpoint string
+---@return boolean, JsonDocument?
 local function get_from_url(endpoint)
   return rest_request(urlGet, endpoint, "")
 end
 
+---@param resource GeneralResource
+---@return boolean, JsonDocument?
 local function activate(resource)
   return put_to_url("device/apps/"..resource.address.."/activate")
 end
 
+---@param resource GeneralResource
+---@param id string
+---@param params table?
+---@return boolean, JsonDocument?
 local function action(resource, id, params)
   local payload = { id = id, activate = true }
   if params and next(params) then
@@ -509,7 +538,14 @@ local function action(resource, id, params)
   return post_to_url("device/apps/"..resource.address.."/actions", payload)
 end
 
-local function notification_runtime(command, resource, arguments)
+---@alias DeviceStates { _MODE:string, _VOLUME:integer, ["_SCREENSAVER ENABLED"]:boolean } }
+---@alias DeviceArguments { _MESSAGE: string, _MODE:string, _VOLUME:integer, _ENABLED:boolean, ["_NOTIFICATION PRIORITY"]:string, ["_NOTIFICATION TYPE"]:string, ["_NOTIFICATION LIFETIME"]:integer, ["_MESSAGE ICON"]:integer }
+---@alias DeviceResource { typeId: string, address:string, states: DeviceStates }
+
+---@param command string
+---@param resource DeviceResource
+---@param arguments DeviceArguments
+local function device_runtime(command, resource, arguments)
   if command == "_NOTIFY" then
     local payload = {
       priority = string.lower(arguments["_NOTIFICATION PRIORITY"]),
@@ -560,7 +596,14 @@ local function notification_runtime(command, resource, arguments)
   end
 end
 
-local function widget_runtime(command, resource, arguments)
+---@alias AppStates { _VISIBLE:boolean }
+---@alias AppArguments {  }
+---@alias AppResource { typeId: string, address:string, states: AppStates }
+
+---@param command string
+---@param resource AppResource
+---@param arguments AppArguments
+local function app_runtime(command, resource, arguments)
   if command == "_ACTIVATE" then
     activate(resource)
   else
@@ -568,6 +611,13 @@ local function widget_runtime(command, resource, arguments)
   end
 end
 
+---@alias StopwatchStates { _VISIBLE:boolean }
+---@alias StopwatchArguments {  }
+---@alias StopwatchResource { typeId: string, address:string, states: StopwatchStates }
+
+---@param command string
+---@param resource StopwatchResource
+---@param arguments StopwatchArguments
 local function stopwatch_runtime(command, resource, arguments)
   if command == "_ACTIVATE" then
     activate(resource)
@@ -582,6 +632,13 @@ local function stopwatch_runtime(command, resource, arguments)
   end
 end
 
+---@alias ClockStates { _VISIBLE:boolean }
+---@alias ClockArguments { _ENABLED:boolean, _TIME:string, ["_WAKE WITH RADIO"]:boolean, _TYPE:string }
+---@alias ClockResource { typeId: string, address:string, states: ClockStates }
+
+---@param command string
+---@param resource ClockResource
+---@param arguments ClockArguments
 local function clock_runtime(command, resource, arguments)
   if command == "_ACTIVATE" then
     activate(resource)
@@ -596,7 +653,14 @@ local function clock_runtime(command, resource, arguments)
   end
 end
 
-local function countdown_runtime(command, resource, arguments)
+---@alias TimerStates { _VISIBLE:boolean }
+---@alias TimerArguments { _DURATION:integer, ["_START NOW"]:boolean }
+---@alias TimerResource { typeId: string, address:string, states: TimerStates }
+
+---@param command string
+---@param resource TimerResource
+---@param arguments TimerArguments
+local function timer_runtime(command, resource, arguments)
   if command == "_ACTIVATE" then
     activate(resource)
   elseif command == "_START" then
@@ -612,6 +676,13 @@ local function countdown_runtime(command, resource, arguments)
   end
 end
 
+---@alias WeatherStates { _VISIBLE:boolean }
+---@alias WeatherArguments {  }
+---@alias WeatherResource { typeId: string, address:string, states: WeatherStates }
+
+---@param command string
+---@param resource WeatherResource
+---@param arguments WeatherArguments
 local function weather_runtime(command, resource, arguments)
   if command == "_ACTIVATE" then
     activate(resource)
@@ -622,6 +693,13 @@ local function weather_runtime(command, resource, arguments)
   end
 end
 
+---@alias RadioStates { _VISIBLE:boolean }
+---@alias RadioArguments { _INDEX:integer}
+---@alias RadioResource { typeId: string, address:string, states: RadioStates }
+
+---@param command string
+---@param resource RadioResource
+---@param arguments RadioArguments
 local function radio_runtime(command, resource, arguments)
   if command == "_ACTIVATE" then
     activate(resource)
@@ -652,6 +730,8 @@ local function create_resource(id, widget, type, description)
 end
 
 -- Public API implementation
+
+---@return boolean, integer
 function requestResources()
   local number_of_resources = 0
 
@@ -698,11 +778,13 @@ function requestResources()
   return true, number_of_resources
 end
 
+---@return integer
 function process()
   local success, device = get_from_url("device")
   if success and device then
     local resource = readResource("_LAMETRIC TIME", device.serial_number)
     if resource then
+      ---@type DeviceStates
       local state = {
          _MODE = string.upper(device.mode),
          _VOLUME = device.audio.volume
@@ -750,21 +832,35 @@ function process()
   return CONST.POLLING
 end
 
+---@param command string
+---@param resource DeviceResource|AppResource|StopwatchResource|WeatherResource|RadioResource|ClockResource
+---@param arguments DeviceArguments|AppArguments|StopwatchArguments|WeatherArguments|RadioArguments|ClockArguments
 function executeCommand(command, resource, arguments)
   if resource.typeId == "_LAMETRIC TIME" then
-    notification_runtime(command, resource, arguments)
+    ---@cast arguments DeviceArguments
+    ---@cast resource DeviceResource
+    device_runtime(command, resource, arguments)
   elseif resource.typeId == "_STOPWATCH APP" then
+    ---@cast resource StopwatchResource
     stopwatch_runtime(command, resource, arguments)
   elseif resource.typeId == "_CLOCK APP" then
+    ---@cast arguments ClockArguments
+    ---@cast resource ClockResource
     clock_runtime(command, resource, arguments)
   elseif resource.typeId == "_TIMER APP" then
-    countdown_runtime(command, resource, arguments)
+    ---@cast arguments TimerArguments
+    ---@cast resource TimerResource
+    timer_runtime(command, resource, arguments)
   elseif resource.typeId == "_WEATHER APP" then
+    ---@cast resource WeatherResource
     weather_runtime(command, resource, arguments)
   elseif resource.typeId == "_RADIO APP" then
+    ---@cast resource RadioResource
+    ---@cast arguments RadioArguments
     radio_runtime(command, resource, arguments)
   elseif resource.typeId == "_3RD PARTY APP" then
-    widget_runtime(command, resource, arguments)
+    ---@cast resource AppResource
+    app_runtime(command, resource, arguments)
   else
     Warn("Unknown resource type '"..resource.typeId.."'")
   end

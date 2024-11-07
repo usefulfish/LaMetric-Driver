@@ -115,10 +115,10 @@ The *_LAMETRIC TIME* resource also supports the following app and settings comma
 
 + \_CLOCK APP
   - **\_ACTIVATE**: Makes the clock the currently displayed app.
-  - **\_ENABLE ALARM**: Turn the alarm on or off
+  - **\_ENABLE ALARM**: Turn the alarm on or off. This will act on the *first* alarm set on the TIME device.
     - *\_ENABLED*: Turns on the alarm if set to true, turns it off otherwise
     - *\_WAKE WITH RADIO*: If true, radio will be activated when alarm goes off
-  - **\_SET ALARM**: Change the time and action of the alarm
+  - **\_SET ALARM**: Change the time and action of the alarm for a specified time. This command will create a new alarm or mofidy an existing alarm if one already exists matching the supplied time.
     - *\_ENABLED*: Turns on the alarm if set to true, turns it off otherwise
     - *\_TIME*: Local time in format "HH:mm" or "HH:mm:ss"
     - *\_WAKE WITH RADIO*: If true, radio will be activated when alarm goes off
