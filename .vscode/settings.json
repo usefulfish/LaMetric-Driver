@@ -41,5 +41,9 @@
         "urlPut",
         "numericArgument",
         "stringArgumentRegEx"
+    ],
+    "cSpell.words": [
+        "clockface",
+        "LAMETRIC"
     ]
 }
