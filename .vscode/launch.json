@@ -1,0 +1,24 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "launch process",
+            "request": "launch",
+            "runtimeArgs": "${workspaceFolder}/Tests.lua",
+            "runtimeExecutable": "${workspaceFolder}/lua.exe",
+            "stopOnEntry": true,
+            "type": "lua"
+        },
+        {
+            "arg": [],
+            "name": "launch",
+            "program": "${workspaceFolder}/Tests.lua",
+            "request": "launch",
+            "stopOnEntry": true,
+            "type": "lua"
+        }
+    ]
+}
