@@ -1,4 +1,4 @@
----@diagnostic disable: lowercase-global
+---@meta
 
 --------------------------------------------------------------------------------
 -- External Definition to set

@@ -216,38 +216,10 @@ notifications and most settings to work, but all apps  and screensaver settings 
 driver_clear_discovered_resources_on_start = true
 driver_version = "1.0"
 
----comment
----@param name string
----@param default_value integer
----@param min_val integer
----@param max_val integer
----@param optionalArgs ArgumentParameters
----@return ArgumentDefinition
-local function intArgument(name, default_value, min_val, max_val, optionalArgs)
-  local context_help
-  if optionalArgs and optionalArgs.context_help then
-    context_help = optionalArgs.context_help
-  else
-    context_help = "Integer value"
-  end
-
-  return {
-    name = name,
-    label = name,
-    type = "int",
-    default = default_value,
-    context_help = context_help,
-    validation = {
-      min = min_val,
-      max = max_val
-    }
-  }
-end
-
 local channel_arguments = {
   stringArgument("_laMetricTimeHost", "", { context_help = "The IP or network name of the LaMetric Time device" }),
   stringArgument("_laMetricTimeApiKey", "", { context_help = "The device api key for the device generated using the smartphone app" }),
-  intArgument("_pollInterval", 60, 1, 10000, { context_help = "The number of seconds between polling for resource state updates." })
+  numericArgument("_pollInterval", 60, 1, 300, { context_help = "The number of seconds between polling for resource state updates." })
 }
 
 driver_channels = {
@@ -270,13 +242,13 @@ resource_types = {
         arguments = {
           stringArgument("_MESSAGE", "", { context_help = "The text of the message to display." }),
           stringArgument("_MESSAGE ICON", "2867", { context_help = "Icon id or base64 encoded binary."}),
-          intArgument("_MESSAGE REPEAT", 1, 0, 100, { context_help = "The number of times message should be displayed. If cycles is set to 0, notification will stay on the screen until user dismisses it manually."}),
-          intArgument("_NOTIFICATION LIFETIME", 120, 1, 1000000, { context_help = "Lifetime of the notification in seconds. Default is 2 minutes." }),
+          numericArgument("_MESSAGE REPEAT", 1, 0, 100, { context_help = "The number of times message should be displayed. If cycles is set to 0, notification will stay on the screen until user dismisses it manually."}),
+          numericArgument("_NOTIFICATION LIFETIME", 120, 1, 1000000, { context_help = "Lifetime of the notification in seconds. Default is 2 minutes." }),
           enumArgument("_NOTIFICATION PRIORITY", { "INFO", "WARNING", "CRITICAL" }, "INFO", { context_help = "Control how the notification priority is handled by the device." }),
           enumArgument("_NOTIFICATION TYPE", { "NONE", "INFO", "ALERT" }, "NONE", { context_help = "Defines an optional announcing icon which is displayed before the message is displayed" }),
           enumArgument("_SOUND CATEGORY", { "ALARMS", "NOTIFICATIONS" }, "NOTIFICATIONS", { context_help = "Indicates the category of the sound id selected." }),
           stringArgument("_SOUND ID", "notification", { context_help = "Should be one of the ids defined for the selected sound category e.g. *alarm1* or *dog* etc." }),
-          intArgument("_SOUND REPEAT", 1, 0, 100, { context_help = "Defines the number of times sound must be played. If set to 0 sound will be played until notification is dismissed."})
+          numericArgument("_SOUND REPEAT", 1, 0, 100, { context_help = "Defines the number of times sound must be played. If set to 0 sound will be played until notification is dismissed."})
         },
         context_help = "Display a customized message on the Time device."
       },
@@ -290,7 +262,7 @@ resource_types = {
       },
       ["_SET VOLUME"] = {
         arguments = {
-          intArgument("_VOLUME", 90, 0, 100, { context_help = "The overall volume to set." })
+          numericArgument("_VOLUME", 90, 0, 100, { context_help = "The overall volume to set." })
         },
         context_help = "Set the volume of the device."
       },
@@ -303,7 +275,7 @@ resource_types = {
     },
     states = {
       enumArgument("_MODE", { "MANUAL", "AUTO", "SCHEDULE", "KIOSK" }, "MANUAL", { context_help = "The current app switching mode of the device."}),
-      intArgument("_VOLUME", 100, 0, 100, { context_help = "The current volume set on the device." }),
+      numericArgument("_VOLUME", 100, 0, 100, { context_help = "The current volume set on the device." }),
       boolArgument("_SCREENSAVER ENABLED", false, { context_help = "Indicates whether the screensaver is currently allowed to activate." })
     }
   },
@@ -338,7 +310,7 @@ resource_types = {
       ["_PLAY"] = { context_help = "Start the radio." },
       ["_PLAY CHANNEL"] = {
         arguments = {
-          intArgument("_INDEX", 1, 1, 10, { context_help = "The station to play." })
+          numericArgument("_INDEX", 1, 1, 10, { context_help = "The station to play." })
         },
         context_help = "Start a specific radio station."
       },
@@ -391,7 +363,7 @@ resource_types = {
       ["_RESET"] = { context_help = "Reset the timer." },
       ["_CONFIGURE"] = {
         arguments = {
-          intArgument("_DURATION", 30, 1, 10000000, { context_help = "Time in seconds."}),
+          numericArgument("_DURATION", 30, 1, 10000000, { context_help = "Time in seconds."}),
           boolArgument("_START NOW", true, { context_help = "If set to true countdown will start immediately."})
         },
         context_help = "Set the duration of the timer."
@@ -430,9 +402,11 @@ end
 
 ---@param method fun(url:string, payload:Payload?, headers:Headers):boolean, string
 ---@param endpoint string
----@param data Payload?
+---@param optional boolean
+---@param polling boolean
+---@param data? Payload
 ---@return boolean, JsonDocument?
-local function rest_request(method, endpoint, data)
+local function rest_request(method, endpoint, optional, polling, data)
   local url = create_url(endpoint)
   local payload = data or ""
 
@@ -440,16 +414,22 @@ local function rest_request(method, endpoint, data)
     payload = tableToJson(data)
   end
 
-  Trace("Sending "..payload.." to "..url)
+  if not polling then
+    Trace("Sending to "..url.." payload: "..payload)
+  end
 
   local success, result = method(url, payload, create_headers())
 
   if success ~= true then
-    Trace("Error response: "..(result or "<none>"))
+    if not optional then
+      Trace("Error response: "..(result or "<none>"))
+    end
     return false, nil
   else
     driver.setOnline()
-    --Trace("Received: "..result)
+    if not polling then
+      Trace("Received response: "..(result or "<none>"))
+    end
     return true, jsonToTable(result)
   end
 end
@@ -458,20 +438,22 @@ end
 ---@param data Payload?
 ---@return boolean, JsonDocument?
 local function post_to_url(endpoint, data)
-  return rest_request(urlPost, endpoint, data)
+  return rest_request(urlPost, endpoint, false, false, data)
 end
 
 ---@param endpoint string
 ---@param data Payload?
 ---@return boolean, JsonDocument?
 local function put_to_url(endpoint, data)
-  return rest_request(urlPut, endpoint, data)
+  return rest_request(urlPut, endpoint, false, false, data)
 end
 
 ---@param endpoint string
+---@param optional boolean
+---@param polling boolean
 ---@return boolean, JsonDocument?
-local function get_from_url(endpoint)
-  return rest_request(urlGet, endpoint, "")
+local function get_from_url(endpoint, optional, polling)
+  return rest_request(urlGet, endpoint, optional, polling, "")
 end
 
 ---@param resource GeneralResource
@@ -699,7 +681,7 @@ end
 function requestResources()
   local number_of_resources = 0
 
-  local success, device = get_from_url("device")
+  local success, device = get_from_url("device", false, false)
   if success and device then
     AddDiscoveredResource({
       ["address"]     = device.serial_number,
@@ -714,7 +696,7 @@ function requestResources()
   end
 
 
-  local success, apps = get_from_url("device/apps")
+  local success, apps = get_from_url("device/apps", true, false)
   if success and apps then
     for name, app in pairs(apps) do
       for id, widget in pairs(app.widgets) do
@@ -744,7 +726,7 @@ end
 
 ---@return integer
 function process()
-  local success, device = get_from_url("device")
+  local success, device = get_from_url("device", false, true)
   if success and device then
     local resource = readResource("_LAMETRIC TIME", device.serial_number)
     if resource then
@@ -764,7 +746,7 @@ function process()
   end
 
   --process app visibility state
-  local success, apps = get_from_url("device/apps")
+  local success, apps = get_from_url("device/apps", true, true)
   if success and apps then
     for name, app in pairs(apps) do
       for id, widget in pairs(app.widgets) do
