@@ -8,9 +8,9 @@ driver_help = [[
 The primary usage would be to display notifications, but resources are also available which allow interaction
 with the various native apps.
 
-### Connection to the Time device
+### Connection to the device
 
-You will need to add one instance of the driver for a single LaMetric Time device. Once connected, each driver instance
+You will need to add one instance of the driver for a single LaMetric device. Once connected, each driver instance
 will talk to a single device and expose its installed apps via resource discovery.
 
 The Time device does not support setting a static IP address directly, you must either use
@@ -22,7 +22,7 @@ Connection settings are:
 
 - **La metric time api key**: This can be obtained by accessing the settings for the device from the smartphone
   app and requesting a key under *Device API Key*.
-- **La metric time host**: IP address or network name of the LaMetric Time device.
+- **La metric time host**: IP address or network name of the LaMetric device.
 - **Poll interval**: The number of seconds between polling for resource state updates. Ideally
   keep polling to a minimum.
 - **Check server certificate**: This should be turned off.
@@ -34,7 +34,7 @@ Connection settings are:
 This is the main resource for the device. It allows sending notifications, basic operation similar to the
 the buttons on the device itself, as well as control of some simple settings.
 
-Access to the apps on the device is achieved though separate resources for each app. The supported app resource
+Access to the apps is achieved though separate resources for each app. The supported app resource
 types are:
 
 - **\_CLOCK APP**: interaction with the native alarm clock app.
@@ -46,12 +46,12 @@ types are:
 
 ### Resource addresses and discovery
 
-Resource discovery is available and is required because of the way in which the Time device
+Resource discovery is available and is required because of the way in which the device
 allocates addresses to applications. Once connected, the primary device and all installed apps will be listed. Only
 installed apps will show up, so if an app is removed from the device then it will not be listed.
 
-The addresses for the Time device and apps are populated by the resource discovery. For an app, the unique address
-can change if you delete the app from your Time device and re\-install it \- in this case you would need
+The addresses for the device and apps are populated by the resource discovery. For an app, the unique address
+can change if you delete the app from your device and re\-install it \- in this case you would need
 to use the resource discovery again to find the new address and then you can update it from there.
 
 ### Resource Events
@@ -65,14 +65,14 @@ it is not expected that you would rely on these updates so polling can be kept t
 
 #### Device Notifications
 
-The primary use case would be to send notifications and alerts to be displayed on the Time device. The device supports
+The primary use case would be to send notifications and alerts to be displayed. The device supports
 rich customization of these notifications so we have exposed two commands for this: a basic one to easily send a simple
-notification to the device, and an enhanced one giving the full range of customization.
+notification, and an enhanced one giving the full range of customization.
 
 *\_LAMETRIC TIME*
 
-- **\_NOTIFY**: Display a simple message on the Time device.
-    - *\_NOTIFICATION PRIORITY*: Control how the notification priority is handled by the device.
+- **\_NOTIFY**: Display a simple message.
+    - *\_NOTIFICATION PRIORITY*: Control how the notification priority is handled.
       - INFO: This level of notification should be used for notifications like news, weather, temperature, etc. This
       notification will not be shown when screensaver is active.
       - WARNING: Should be used to notify the user about something important but not critical. For example, events like
@@ -82,7 +82,7 @@ notification to the device, and an enhanced one giving the full range of customi
       be used only for really important notifications like notifications from smoke detectors, water leak sensors, etc. Use
       it for events that require human interaction immediately.
     - *\_MESSAGE*: The text of the message to display.
-- **\_NOTIFY WITH DETAILS**: Display a customized message on the Time device. Arguments are populated with defaults
+- **\_NOTIFY WITH DETAILS**: Display a customized message. Arguments are populated with defaults
 which match the simple message command.
     - *\_MESSAGE*: The text of the message to display.
     - *\_MESSAGE ICON*: Icon id or base64 encoded binary. There is a huge array of possible options. Choose
@@ -122,9 +122,9 @@ The *\_LAMETRIC TIME* resource also supports the following app and settings comm
 - *\_LAMETRIC TIME*
     - **\_NEXT APPLICATION**: Make the next app visible. Equivalent to pressing the right button on the device.
     - **\_PREV APPLICATION**: Make the previous app visible. Equivalent to pressing the left button on the device.
-    - **\_SET MODE**: Set the app switching mode of the device. This might be required if you want a selected app to remain visible.
+    - **\_SET MODE**: Set the app switching mode. This might be required if you want a selected app to remain visible.
         - *\_MODE*: The app switching mode to set \- see resource states below.
-    - **\_SET VOLUME**: Set the volume of the device. This will affect sounds played as part of a notification as well as the radio.
+    - **\_SET VOLUME**: Set the overall volume of the device. This will affect sounds played as part of a notification as well as the radio.
       - *\_VOLUME*: The overall volume to set.
     - **\_SET SCREENSAVER**: Enables or disables the screensaver. This might be required because app switching
     might not work as expected when the screensaver is active.
@@ -139,7 +139,7 @@ Some apps have additional commands and these are detailed below.
 
 - \_CLOCK APP
     - **\_ACTIVATE**: Makes the clock the currently displayed app.
-    - **\_ENABLE ALARM**: Turn the alarm on or off. This will act on the *first* alarm set on the Time device.
+    - **\_ENABLE ALARM**: Turn the alarm on or off. This will act on the *first* alarm.
         - *\_ENABLED*: Turns on the alarm if set to true, turns it off otherwise.
         - *\_WAKE WITH RADIO*: If true, radio will be activated when alarm goes off.
     - **\_SET ALARM**: Change the action for the alarm at the specified time. This command will create
@@ -189,15 +189,15 @@ The Time resource has the following states which are updated on each poll:
         - *AUTO*: Auto\-scroll mode, when the device switches between apps automatically.
         - *SCHEDULE*: Mode when apps get switched according to a schedule defined using the smartphone app.
         - *KIOSK*: Kiosk mode when single app is locked on the device.
-    - **\_VOLUME**: The current volume set on the device.
+    - **\_VOLUME**: The current overall volume on the device.
     - **\_SCREENSAVER ENABLED**: Indicates whether the screensaver is allowed to activate. When the screensaver is active activating
     an app will not work.
 
-All the app resources simply expose a single state which indicates whether or not the app if currently visible
-on the device. Only one app can be visible at a time and the state is only updated on polling.
+All the app resources simply expose a single state which indicates whether or not the app if currently visible. Only
+one app can be visible at a time and the state is only updated on polling.
 
 - \_CLOCK APP, \_TIMER APP, \_STOPWATCH APP, \_RADIO APP, \_WEATHER APP and \_3RD PARTY APP
-    - **\_VISIBLE**: Indicates whether this app is currently displayed on the TIME device..
+    - **\_VISIBLE**: Indicates whether this app is currently displayed on the device.
 
 ### Driver Compatibility
 
@@ -217,13 +217,13 @@ driver_clear_discovered_resources_on_start = true
 driver_version = "1.0"
 
 local channel_arguments = {
-  stringArgument("_laMetricTimeHost", "", { context_help = "The IP or network name of the LaMetric Time device" }),
-  stringArgument("_laMetricTimeApiKey", "", { context_help = "The device api key for the device generated using the smartphone app" }),
+  stringArgument("_laMetricTimeHost", "", { context_help = "The IP or network name of the LaMetric device" }),
+  stringArgument("_laMetricTimeApiKey", "", { context_help = "The device api key generated using the smartphone app" }),
   numericArgument("_pollInterval", 60, 1, 300, { context_help = "The number of seconds between polling for resource state updates." })
 }
 
 driver_channels = {
-  CUSTOM("LaMetric connection", "Connection to a single LaMetric Time device", channel_arguments)
+  CUSTOM("LaMetric connection", "Connection to a single LaMetric device", channel_arguments)
 }
 
 resource_types = {
@@ -233,38 +233,38 @@ resource_types = {
     commands = {
       ["_NOTIFY"] = {
         arguments = {
-          stringArgument("_MESSAGE", "", { context_help = "The text of the message to display." }),
-          enumArgument("_NOTIFICATION PRIORITY", { "INFO", "WARNING", "CRITICAL" }, "INFO", { context_help = "Control how the notification priority is handled by the device" })
+          stringArgument("_MESSAGE", "", { context_help = "Enter the text of the message to display." }),
+          enumArgument("_NOTIFICATION PRIORITY", { "INFO", "WARNING", "CRITICAL" }, "INFO", { context_help = "Choose how the notification priority is handled by the device" })
         },
-        context_help = "Display a simple message on the Time device."
+        context_help = "Display a simple message."
       },
       ["_NOTIFY WITH DETAILS"] = {
         arguments = {
-          stringArgument("_MESSAGE", "", { context_help = "The text of the message to display." }),
+          stringArgument("_MESSAGE", "", { context_help = "Enter the text of the message to display." }),
           stringArgument("_MESSAGE ICON", "2867", { context_help = "Icon id or base64 encoded binary."}),
-          numericArgument("_MESSAGE REPEAT", 1, 0, 100, { context_help = "The number of times message should be displayed. If cycles is set to 0, notification will stay on the screen until user dismisses it manually."}),
-          numericArgument("_NOTIFICATION LIFETIME", 120, 1, 1000000, { context_help = "Lifetime of the notification in seconds. Default is 2 minutes." }),
-          enumArgument("_NOTIFICATION PRIORITY", { "INFO", "WARNING", "CRITICAL" }, "INFO", { context_help = "Control how the notification priority is handled by the device." }),
-          enumArgument("_NOTIFICATION TYPE", { "NONE", "INFO", "ALERT" }, "NONE", { context_help = "Defines an optional announcing icon which is displayed before the message is displayed" }),
-          enumArgument("_SOUND CATEGORY", { "ALARMS", "NOTIFICATIONS" }, "NOTIFICATIONS", { context_help = "Indicates the category of the sound id selected." }),
-          stringArgument("_SOUND ID", "notification", { context_help = "Should be one of the ids defined for the selected sound category e.g. *alarm1* or *dog* etc." }),
-          numericArgument("_SOUND REPEAT", 1, 0, 100, { context_help = "Defines the number of times sound must be played. If set to 0 sound will be played until notification is dismissed."})
+          numericArgument("_MESSAGE REPEAT", 1, 0, 100, { context_help = "The number of times message should be displayed. If 0, notification will stay on the screen until user dismisses it manually."}),
+          numericArgument("_NOTIFICATION LIFETIME", 120, 1, 1000000, { context_help = "Lifetime of the notification in seconds." }),
+          enumArgument("_NOTIFICATION PRIORITY", { "INFO", "WARNING", "CRITICAL" }, "INFO", { context_help = "Choose how the notification priority is handled by the device." }),
+          enumArgument("_NOTIFICATION TYPE", { "NONE", "INFO", "ALERT" }, "NONE", { context_help = "Select any announcing icon before the message is shown." }),
+          enumArgument("_SOUND CATEGORY", { "ALARMS", "NOTIFICATIONS" }, "NOTIFICATIONS", { context_help = "Select the category of the sound id." }),
+          stringArgument("_SOUND ID", "notification", { context_help = "Must be one of the ids defined for the selected sound category e.g. *alarm1* or *dog* etc." }),
+          numericArgument("_SOUND REPEAT", 1, 0, 100, { context_help = "Enter the number of times sound must be played. If 0 sound will be played until notification is dismissed."})
         },
-        context_help = "Display a customized message on the Time device."
+        context_help = "Display a customized message."
       },
       ["_NEXT APPLICATION"] = { context_help = "Make the next app visible." },
       ["_PREV APPLICATION"] = { context_help = "Make the previous app visible." },
       ["_SET MODE"] = {
         arguments = {
-          enumArgument("_MODE", { "MANUAL", "AUTO", "SCHEDULE", "KIOSK" }, "MANUAL", { context_help = "The desired mode for the device."})
+          enumArgument("_MODE", { "MANUAL", "AUTO", "SCHEDULE", "KIOSK" }, "MANUAL", { context_help = "Choose the app switching mode for the device."})
         },
-        context_help = "Set the app switching mode of the device."
+        context_help = "Set the app switching mode."
       },
       ["_SET VOLUME"] = {
         arguments = {
-          numericArgument("_VOLUME", 90, 0, 100, { context_help = "The overall volume to set." })
+          numericArgument("_VOLUME", 90, 0, 100, { context_help = "Enter the overall volume." })
         },
-        context_help = "Set the volume of the device."
+        context_help = "Set the overall volume."
       },
       ["_SET SCREENSAVER"] = {
         arguments = {
@@ -274,9 +274,9 @@ resource_types = {
       }
     },
     states = {
-      enumArgument("_MODE", { "MANUAL", "AUTO", "SCHEDULE", "KIOSK" }, "MANUAL", { context_help = "The current app switching mode of the device."}),
-      numericArgument("_VOLUME", 100, 0, 100, { context_help = "The current volume set on the device." }),
-      boolArgument("_SCREENSAVER ENABLED", false, { context_help = "Indicates whether the screensaver is currently allowed to activate." })
+      enumArgument("_MODE", { "MANUAL", "AUTO", "SCHEDULE", "KIOSK" }, "MANUAL", { context_help = "The current app switching mode."}),
+      numericArgument("_VOLUME", 100, 0, 100, { context_help = "The current overall volume." }),
+      boolArgument("_SCREENSAVER ENABLED", false, { context_help = "Whether the screensaver is currently allowed to activate." })
     }
   },
   ["_3RD PARTY APP"] = {
@@ -286,7 +286,7 @@ resource_types = {
       ["_ACTIVATE"] = { context_help = "Make this app the currently displayed app." }
     },
     states = {
-      boolArgument("_VISIBLE", false, { context_help = "Indicates whether this app is currently displayed on the TIME device."})
+      boolArgument("_VISIBLE", false, { context_help = "Whether this app is currently displayed on the device."})
     }
   },
   ["_STOPWATCH APP"] = {
@@ -299,7 +299,7 @@ resource_types = {
       ["_RESET"] = { context_help = "Reset the stopwatch." }
     },
     states = {
-      boolArgument("_VISIBLE", false, { context_help = "Indicates whether this app is currently displayed on the TIME device."})
+      boolArgument("_VISIBLE", false, { context_help = "Whether this app is currently displayed on the device."})
     }
   },
   ["_RADIO APP"] = {
@@ -319,7 +319,7 @@ resource_types = {
       ["_PREV"] = { context_help = "Previous radio station." }
     },
     states = {
-      boolArgument("_VISIBLE", false, { context_help = "Indicates whether this app is currently displayed on the TIME device."})
+      boolArgument("_VISIBLE", false, { context_help = "Whether this app is currently displayed on the device."})
     }
   },
   ["_CLOCK APP"] = {
@@ -340,7 +340,7 @@ resource_types = {
           boolArgument("_ENABLED", true, { context_help = "Activates the alarm if set to true, deactivates otherwise."}),
           boolArgument("_WAKE WITH RADIO", false, { context_help = "If true, radio will be activated when alarm goes off."})
         },
-        context_help = "Turn the alarm on or off. This will act on the *first* alarm set on the Time device."
+        context_help = "Turn the alarm on or off. Acts on the *first* alarm."
       },
       ["_SET CLOCKFACE"] = {
         arguments = {
@@ -350,7 +350,7 @@ resource_types = {
       }
     },
     states = {
-      boolArgument("_VISIBLE", false, { context_help = "Indicates whether this app is currently displayed on the TIME device."})
+      boolArgument("_VISIBLE", false, { context_help = "Whether this app is currently displayed on the device."})
     }
   },
   ["_TIMER APP"] = {
@@ -370,7 +370,7 @@ resource_types = {
       }
     },
     states = {
-      boolArgument("_VISIBLE", false, { context_help = "Indicates whether this app is currently displayed on the TIME device."})
+      boolArgument("_VISIBLE", false, { context_help = "Whether this app is currently displayed on the device."})
     }
   },
   ["_WEATHER APP"] = {
@@ -381,7 +381,7 @@ resource_types = {
       ["_FORECAST"] = { context_help = "Display the weather forecast." }
     },
     states = {
-      boolArgument("_VISIBLE", false, { context_help = "Indicates whether this app is currently displayed on the TIME device."})
+      boolArgument("_VISIBLE", false, { context_help = "Whether this app is currently displayed on the device."})
     }
   }
 }
@@ -687,7 +687,7 @@ function requestResources()
       ["address"]     = device.serial_number,
       ["name"]        = device.name,
       ["type"]        = "_LAMETRIC TIME",
-      ["description"] = "LaMetric TIME device",
+      ["description"] = "LaMetric Time device",
       ["areaName"]    = "",
       ["zoneName"]    = ""
     })
