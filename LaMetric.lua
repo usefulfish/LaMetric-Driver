@@ -1,17 +1,17 @@
 -- Driver definitions
 driver_label = "LaMetric"
-driver_load_system_help = "Allows integration with a LaMetric Time device."
+driver_load_system_help = "Integration with a LaMetric Time device."
 driver_has_capture = false
 driver_help = [[
 ## LaMetric Time
 
-The primary usage would be to display notifications, but resources are also available which allow interaction
-with the various native apps.
+Allows display of notifications and alerts on a LaMetric Time device. Additional resources allow interaction
+with the native apps.
 
 ### Connection to the device
 
-You will need to add one instance of the driver for a single LaMetric device. Once connected, each driver instance
-will talk to a single device and expose its installed apps via resource discovery.
+You need to add one instance of the driver for each LaMetric device. Each driver instance
+will expose resources for the apps on that device via resource discovery.
 
 The Time device does not support setting a static IP address directly, you must either use
 the advertised network name or an IP address you assign. To find the network name use the smartphone app and select
@@ -29,12 +29,12 @@ Connection settings are:
 
 ### Available Resources
 
-- **\_LAMETRIC TIME**: A LaMetric Time device allowing notifications and access to basic settings.
+- **\_LAMETRIC TIME**: A LaMetric Time device allowing notifications and basic settings.
 
 This is the main resource for the device. It allows sending notifications, basic operation similar to the
-the buttons on the device itself, as well as control of some simple settings.
+the buttons on the device and control of some simple settings.
 
-Access to the apps is achieved though separate resources for each app. The supported app resource
+Control of the apps is achieved though separate app resources. The supported resource
 types are:
 
 - **\_CLOCK APP**: interaction with the native alarm clock app.
@@ -46,27 +46,24 @@ types are:
 
 ### Resource addresses and discovery
 
-Resource discovery is available and is required because of the way in which the device
-allocates addresses to applications. Once connected, the primary device and all installed apps will be listed. Only
-installed apps will show up, so if an app is removed from the device then it will not be listed.
+Resource discovery is required because of the way in which the device
+allocates addresses to applications. The primary device and all installed apps are listed.
 
-The addresses for the device and apps are populated by the resource discovery. For an app, the unique address
-can change if you delete the app from your device and re\-install it \- in this case you would need
-to use the resource discovery again to find the new address and then you can update it from there.
+The unique address for an app can change if you delete the app from your device
+and re\-install it. If this happens you will need to use the resource discovery again to find the new address
+and then update it in the resource list.
 
 ### Resource Events
 
 The LaMetric Time does not support events over its API, but the driver will poll for
-changes and raise appropriate state update events as expected. Given that the primary
-usage of this drive would be to send notifications and some basic operation of the native apps, then
-it is not expected that you would rely on these updates so polling can be kept to a minimum.
+changes and raise appropriate state update events as expected. As events only happen after polling
+there could be some delay.
 
 ### Resource Commands
 
 #### Device Notifications
 
-The primary use case would be to send notifications and alerts to be displayed. The device supports
-rich customization of these notifications so we have exposed two commands for this: a basic one to easily send a simple
+There are two commands which display notifications: a basic one with minimal parameters to easily send a simple
 notification, and an enhanced one giving the full range of customization.
 
 *\_LAMETRIC TIME*
@@ -98,17 +95,17 @@ which match the simple message command.
         no need to take actions on it.
         - ALERT: "!!!" icon will be displayed prior to the notification. Use it when you want the user to pay attention
         to that notification as it indicates that something bad happened and user must take immediate action.
-    - *\_SOUND CATEGORY*: Indicates the category of the sound id selected.
+    - *\_SOUND CATEGORY*: Indicates the category of any sound id selected.
         - ALARMS: The sound id supplied should be one of the *alarm sound ids* listed below.
         - NOTIFICATIONS: The sound id supplied should be one of the *notification sound ids* listed below.
     - *\_SOUND ID*: Should be one of the ids listed below for the selected sound category e.g. *alarm1* or *dog* etc.
     - *\_SOUND REPEAT*: Defines the number of times sound must be played. If set to 0 sound will be played until
     notification is dismissed.
 
-Full list of **alarm sound ids** currently defined: alarm1, alarm2, alarm3, alarm4, alarm5, alarm6, alarm7, alarm8,
+Full list of **alarm sound ids** currently defined on the device is: alarm1, alarm2, alarm3, alarm4, alarm5, alarm6, alarm7, alarm8,
 alarm9, alarm10, alarm11, alarm12, alarm13.
 
-Full list of **notification sound ids** currently defined: bicycle, car, cash, cat, dog, dog2, energy, knock\-knock,
+Full list of **notification sound ids** currently defined on the device is: bicycle, car, cash, cat, dog, dog2, energy, knock\-knock,
 letter\_email, lose1, lose2,
 negative1, negative2, negative3, negative4, negative5,
 notification, notification2, notification3, notification4,
@@ -122,20 +119,20 @@ The *\_LAMETRIC TIME* resource also supports the following app and settings comm
 - *\_LAMETRIC TIME*
     - **\_NEXT APPLICATION**: Make the next app visible. Equivalent to pressing the right button on the device.
     - **\_PREV APPLICATION**: Make the previous app visible. Equivalent to pressing the left button on the device.
-    - **\_SET MODE**: Set the app switching mode. This might be required if you want a selected app to remain visible.
+    - **\_SET MODE**: Set the app switching mode. This might be required if you want a app to remain visible.
         - *\_MODE*: The app switching mode to set \- see resource states below.
-    - **\_SET VOLUME**: Set the overall volume of the device. This will affect sounds played as part of a notification as well as the radio.
+    - **\_SET VOLUME**: Set the overall volume of the device. This will affect the volume for notifications, alarms as well as the radio.
       - *\_VOLUME*: The overall volume to set.
-    - **\_SET SCREENSAVER**: Enables or disables the screensaver. This might be required because app switching
+    - **\_SET SCREENSAVER**: Allows the device to activate the screensaver. This might be required because app switching
     might not work as expected when the screensaver is active.
-        - *\_ENABLED*: True to enable the screensaver, false to disable it.
+        - *\_ENABLED*: True to allow the screensaver, false to disable it.
 
 #### Interaction with apps and app switching
 
 You can switch forward and backwards between apps using the commands on the Time device resource. Alternatively you can select
-a specific app directly on the resource for that app by using its *\_ACTIVATE* command.
+a specific app directly on the resource for that app using its *\_ACTIVATE* command.
 
-Some apps have additional commands and these are detailed below.
+Some apps have additional commands:
 
 - \_CLOCK APP
     - **\_ACTIVATE**: Makes the clock the currently displayed app.
@@ -204,7 +201,8 @@ one app can be visible at a time and the state is only updated on polling.
 This driver is tested against LaMetric Time firmware **v2.3.0**, but should be fully compatible with **v2.1.0**.
 
 For the older **v2.0**, the driver should still work but with limited functionality. You should expect the *\_LAMETRIC TIME*
-notifications and most settings to work, but all apps  and screensaver settings are not supported in this version.
+notifications and most settings to work, but all apps, app related commands and screensaver settings are not
+supported in this version.
 
 ### Change Log
 
