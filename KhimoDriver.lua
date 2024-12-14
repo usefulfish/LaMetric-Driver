@@ -197,8 +197,8 @@ CONST = {
 -- Resources
 --------------------------------------------------------------------------------
 
----@alias GeneralStates { [string]:StateValues } }
----@alias GeneralArguments { [string]:StateValues }
+---@class GeneralStates: { [string]:StateValues } }
+---@class GeneralArguments: { [string]:StateValues }
 
 ---@class (exact) GeneralResource
 ---@field ID string
@@ -240,6 +240,11 @@ end
 ---comment
 ---@param definition LoadedResource
 function addDiscoveredResource(definition)
+end
+
+---comment
+---@param definition LoadedResource
+function AddDiscoveredResource(definition)
 end
 
 ---comment
