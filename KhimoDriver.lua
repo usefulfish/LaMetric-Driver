@@ -1,4 +1,5 @@
 ---@meta
+---@diagnostic disable: lowercase-global
 
 --------------------------------------------------------------------------------
 -- External Definition to set
@@ -16,6 +17,12 @@ driver_clear_discovered_resources_on_start = true
 --------------------------------------------------------------------------------
 -- Argument definition
 --------------------------------------------------------------------------------
+
+---@type table
+driver_channels = {}
+
+---@type table
+resource_types = {}
 
 ---@alias StateValues string|integer|number|boolean
 ---@alias TypeName "int" | "boolean" | "string" | "number"
@@ -42,9 +49,9 @@ driver_clear_discovered_resources_on_start = true
 ---@param additional? ArgumentParameters
 ---@return ArgumentDefinition
 function stringArgument(name, default, additional)
-    return {}
-  end
-  
+  return {}
+end
+
 ---comment
 ---@param name string
 ---@param default string
@@ -52,17 +59,17 @@ function stringArgument(name, default, additional)
 ---@param additional? ArgumentParameters
 ---@return ArgumentDefinition
 function stringArgumentRegEx(name, default, regex, additional)
-    return {}
-  end
-  
+  return {}
+end
+
 ---comment
 ---@param name string
 ---@param default boolean
 ---@param additional? ArgumentParameters
 ---@return ArgumentDefinition
 function boolArgument(name, default, additional)
-    return {}
-  end
+  return {}
+end
 
 ---@alias EnumValue string|integer
 ---comment
@@ -129,8 +136,8 @@ channel = {}
 ---@param name string
 ---@return StateValues
 function channel.attributes(name)
-    local x = ""
-    return x
+  local x = ""
+  return x
 end
 
 ---comment
@@ -146,10 +153,16 @@ driver = {}
 function driver.setOffline()
 end
 
+function driver.setConnecting()
+end
+
+function driver.setConnected()
+end
+
 function driver.setOnline()
 end
 
-function driver.setConnecting()
+function driver.setError()
 end
 
 ---comment
@@ -165,10 +178,19 @@ end
 ---@param arguments ArgumentDefinition[]
 ---@return table
 function CUSTOM(name, description, arguments)
-    return {}
+  return {}
 end
 
-CONST = { POLLING = 1 }
+CONST = {
+  OK = 1,
+  HW_ERROR = 2,
+  INVALID_CREDENTIALS = 3,
+  TIMEOUT = 4,
+  PORT_CLOSED = 5,
+  CONNECTED = 6,
+  POLLING = 7,
+
+}
 
 
 --------------------------------------------------------------------------------
@@ -179,6 +201,8 @@ CONST = { POLLING = 1 }
 ---@alias GeneralArguments { [string]:StateValues }
 
 ---@class (exact) GeneralResource
+---@field ID string
+---@field name string
 ---@field typeId string
 ---@field address string
 ---@field states GeneralStates
@@ -188,7 +212,7 @@ CONST = { POLLING = 1 }
 ---@param address string
 ---@return GeneralResource
 function readResource(typeId, address)
-    return {}
+  return {}
 end
 
 ---comment
@@ -205,9 +229,17 @@ end
 function setResourceState(typeId, address, state)
 end
 
+---@class (exact) LoadedResource
+---@field name string
+---@field type string
+---@field areaName string
+---@field zoneName string
+---@field address string
+---@field description string
+
 ---comment
----@param definition table
-function AddDiscoveredResource(definition)
+---@param definition LoadedResource
+function addDiscoveredResource(definition)
 end
 
 ---comment
@@ -260,7 +292,6 @@ end
 function Trace(message, isUser)
 end
 
-
 --------------------------------------------------------------------------------
 -- Rest Api calls
 --------------------------------------------------------------------------------
@@ -277,7 +308,7 @@ end
 ---@return boolean
 ---@return string?
 function urlGet(url, payload, headers)
-    return true, ""
+  return true, ""
 end
 
 ---comment
@@ -287,7 +318,7 @@ end
 ---@return boolean
 ---@return string?
 function urlPost(url, payload, headers)
-    return true, ""
+  return true, ""
 end
 
 ---comment
@@ -297,7 +328,7 @@ end
 ---@return boolean
 ---@return string?
 function urlPut(url, payload, headers)
-    return true, ""
+  return true, ""
 end
 
 ---comment
@@ -311,48 +342,116 @@ end
 ---@param jsonTable JsonDocument
 ---@return string
 function tableToJson(jsonTable)
-    return ""
+  return ""
 end
 
 ---comment
 ---@param jsonString string
 ---@return JsonDocument
 function jsonToTable(jsonString)
-    return {}
+  return {}
 end
 
+---@class (exact) StreamRequest table
+---@field type "GET" | "POST"
+---@field url string
+---@field headers Headers
+---@field arguments string
+
+---@class (exact) StreamTable
+---@field id string
+---@field url string
+---@field type string
+
+---comment
+---@param request StreamRequest
+---@return boolean
+---@return StreamTable
+---@return string?
+function urlStreamCreate(request)
+  return true, {}, ""
+end
+
+---@class (exact) WaitResult
+---@field has fun(stream:StreamTable):boolean
+
+---@class (exact) ErrorCase
+---@field type "timeout" | "interrupt"
+---@field userdata any
+
+---comment
+---@param timeout integer
+---@param stream StreamTable
+---@return boolean
+---@return WaitResult
+---@return ErrorCase?
+function urlStreamWait(timeout, stream)
+  return true, {}, {}
+end
+
+---@class (exact) ReadResult
+---@field code integer
+---@field url string
+---@field data string
+---@field id string
+---@field finalized boolean
+
+---comment
+---@param stream StreamTable
+---@return boolean
+---@return ReadResult
+---@return string?
+function urlStreamRead(stream)
+  return true, {}, "OK"
+end
+
+---comment
+---@param stream StreamTable
+---@return boolean
+---@return string?
+function urlStreamDelete(stream)
+  return true, ""
+end
+
+---
+---@param userData any
+---@return boolean
+---@return string?
+function urlStreamInterrupt(userData)
+  return true, ""
+end
 
 --------------------------------------------------------------------------------
 -- External API to implement
 --------------------------------------------------------------------------------
 
 ---@return boolean, integer
-function requestResources1()
+function requestResources()
   return false, 0
 end
 
 ---@return integer
-function process1()
+function process()
   return CONST.POLLING
 end
 
 ---@param command string
 ---@param resource GeneralResource
 ---@param arguments GeneralArguments
-function executeCommand1(command, resource, arguments)
+function executeCommand(command, resource, arguments)
 end
 
 ---comment
 ---@param resource GeneralResource
-function onResourceDelete1(resource)
+function onResourceDelete(resource)
 end
 
 ---comment
 ---@param resource GeneralResource
-function onResourceUpdate1(resource)
+function onResourceUpdate(resource)
 end
 
 ---comment
 ---@param resource GeneralResource
-function onResourceAdd1(resource)
+function onResourceAdd(resource)
 end
