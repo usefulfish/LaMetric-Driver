@@ -18,7 +18,8 @@ driver_has_capture = false
 driver_help = ""
 ---@type boolean
 driver_clear_discovered_resources_on_start = true
-
+---@type table
+driver_extra_methods = {}
 ---@type table
 driver_channels = {}
 
