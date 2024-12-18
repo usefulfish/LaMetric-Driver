@@ -1,4 +1,4 @@
----@meta
+---@meta BeoLivingDriver
 ---@diagnostic disable: lowercase-global
 
 --------------------------------------------------------------------------------
@@ -8,18 +8,23 @@
 
 ---@type string
 driver_label = "Driver name"
+---@type string
 driver_version = "1.0"
+---@type string
 driver_load_system_help = "Driver description"
+---@type boolean
 driver_has_capture = false
+---@type string
 driver_help = ""
+---@type boolean
 driver_clear_discovered_resources_on_start = true
+
+---@type table
+driver_channels = {}
 
 --------------------------------------------------------------------------------
 -- Argument definition
 --------------------------------------------------------------------------------
-
----@type table
-driver_channels = {}
 
 ---@type table
 resource_types = {}
@@ -126,7 +131,6 @@ end
 -- Driver channels and implementation
 --------------------------------------------------------------------------------
 
-
 ---@class (exact) Channel
 ---@field attributes fun(string): StateValues
 ---@field retry fun(string, int)
@@ -146,12 +150,13 @@ end
 function channel.retry(userMessage, pollInterval)
 end
 
----@class exact Driver
+---@class (exact) Driver
+---@field setConnecting fun()
+---@field setConnected fun()
 ---@field setOnline fun()
+---@field setOffline fun()
+---@field setError fun()
 driver = {}
-
-function driver.setOffline()
-end
 
 function driver.setConnecting()
 end
@@ -160,6 +165,9 @@ function driver.setConnected()
 end
 
 function driver.setOnline()
+end
+
+function driver.setOffline()
 end
 
 function driver.setError()
@@ -188,8 +196,7 @@ CONST = {
   TIMEOUT = 4,
   PORT_CLOSED = 5,
   CONNECTED = 6,
-  POLLING = 7,
-
+  POLLING = 7
 }
 
 

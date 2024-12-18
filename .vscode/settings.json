@@ -1,19 +1,5 @@
 {
     "Lua.diagnostics.globals": [
-        "driver_label",
-        "driver_version",
-        "driver_load_system_help",
-        "driver_has_capture",
-        "driver_help",
-        "driver_clear_discovered_resources_on_start",
-        "driver_channels",
-        "resource_types",
-        "requestResources",
-        "process",
-        "executeCommand",
-        "onResourceDelete",
-        "onResourceUpdate",
-        "onResourceAdd"
     ],
     "cSpell.words": [
         "clockface",
